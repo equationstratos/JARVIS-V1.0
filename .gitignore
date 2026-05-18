@@ -1,2 +1,16 @@
 .env
-benchs/testfile
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+Logs/
+memoire_ia/
+node_modules/
+mobile/node_modules/
+mobile/android/.gradle/
+mobile/.expo/
+*.egg-info/
+dist/
+build/
+.DS_Store

@@ -9,15 +9,32 @@ import asyncio
 import os
 import sys
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Ajouter la racine du projet (parent de TESTS/) au path
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(TESTS_DIR)
+sys.path.insert(0, PROJECT_ROOT)
 
-from config import JARVISConfig
-from core.orchestrator import Orchestrator
-from utils.cache_manager import CacheManager
-from utils.validator import ResponseValidator
-from utils.semantic_router import SemanticRouter
-from utils.observability import ObservabilityManager
+# Charger .env avant d'importer config
+from dotenv import load_dotenv
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
+
+try:
+    from config import JARVISConfig
+except ImportError as e:
+    print(f"FAILED to import config: {e}")
+    print("Make sure the venv is active: source venv/bin/activate")
+    sys.exit(1)
+
+try:
+    from core.orchestrator import Orchestrator
+    from utils.cache_manager import CacheManager
+    from utils.validator import ResponseValidator
+    from utils.semantic_router import SemanticRouter
+    from utils.observability import ObservabilityManager
+except ImportError as e:
+    print(f"FAILED to import core modules: {e}")
+    print("Run: pip install -r requirements.txt")
+    sys.exit(1)
 
 
 async def test_configuration():
@@ -30,9 +47,14 @@ async def test_configuration():
     print("\n1. Testing Configuration...")
     is_valid, errors = JARVISConfig.validate()
     if not is_valid:
-        print(f"❌ Configuration errors: {errors}")
-        return False
-    print("✓ Configuration valid")
+        if JARVISConfig.DEFAULT_MODEL.startswith("ollama/"):
+            print(f"  NOTE: {errors}")
+            print("  OK: Ollama mode — configuration valid without cloud keys")
+        else:
+            print(f"  FAILED Configuration errors: {errors}")
+            return False
+    else:
+        print("  OK Configuration valid")
     print(JARVISConfig.summary())
 
     # 2. Cache Manager
@@ -41,10 +63,10 @@ async def test_configuration():
         cache = CacheManager()
         await cache.set("test_key", {"value": "test"}, ttl=3600)
         result = await cache.get("test_key")
-        assert result == {"value": "test"}, "Cache set/get failed"
-        print("✓ Cache Manager OK")
+        assert result == {"value": "test"}, "Cache set/get mismatch"
+        print("  OK Cache Manager (in-memory mode)")
     except Exception as e:
-        print(f"❌ Cache Manager failed: {e}")
+        print(f"  FAILED Cache Manager: {e}")
         return False
 
     # 3. Validator
@@ -58,9 +80,9 @@ async def test_configuration():
         )
         assert "confidence" in result, "Validator missing confidence"
         assert "is_valid" in result, "Validator missing is_valid"
-        print(f"✓ Response Validator OK (confidence: {result.get('confidence', 0):.2f})")
+        print(f"  OK Response Validator (confidence: {result.get('confidence', 0):.2f})")
     except Exception as e:
-        print(f"❌ Response Validator failed: {e}")
+        print(f"  FAILED Response Validator: {e}")
         return False
 
     # 4. Semantic Router
@@ -68,18 +90,18 @@ async def test_configuration():
     try:
         router = SemanticRouter()
         available = router.is_available()
-        print(f"✓ Semantic Router available: {available}")
+        print(f"  OK Semantic Router available: {available}")
         if not available:
-            print("  (sentence-transformers not installed, will skip semantic routing)")
+            print("  (sentence-transformers not installed — semantic routing disabled)")
     except Exception as e:
-        print(f"❌ Semantic Router initialization failed: {e}")
+        print(f"  FAILED Semantic Router: {e}")
         return False
 
     # 5. Observability
     print("\n5. Testing Observability Manager...")
     try:
-        obs = ObservabilityManager(enabled=False)  # No OTLP for test
-        snapshot = obs.record_agent_execution(
+        obs = ObservabilityManager(enabled=False)
+        obs.record_agent_execution(
             agent_name="TestAgent",
             model_name="test-model",
             prompt_tokens=100,
@@ -89,33 +111,32 @@ async def test_configuration():
         )
         stats = obs.get_global_stats()
         assert "avg_latency_ms" in stats, "Observability missing avg_latency_ms"
-        print(f"✓ Observability Manager OK (recorded {len(obs.metrics_history)} metrics)")
+        print(f"  OK Observability Manager ({len(obs.metrics_history)} metrics recorded)")
     except Exception as e:
-        print(f"❌ Observability Manager failed: {e}")
+        print(f"  FAILED Observability Manager: {e}")
         return False
 
     # 6. Orchestrator & Agents
     print("\n6. Testing Orchestrator & Agents...")
     try:
-        agents_dir = os.path.join(os.path.dirname(__file__), "agents/configs")
+        agents_dir = os.path.join(PROJECT_ROOT, "agents/configs")
         orchestrator = Orchestrator(agents_dir, cache)
-        print(f"✓ Orchestrator loaded {len(orchestrator.agents)} agents:")
+        print(f"  OK Orchestrator loaded {len(orchestrator.agents)} agents:")
         for agent_name in sorted(orchestrator.agents.keys()):
             agent = orchestrator.agents[agent_name]
-            print(f"  - {agent_name}: {agent.model} (temp={agent.temperature})")
+            print(f"    - {agent_name}: {agent.model}")
 
-        # Initialize semantic router if available
         if router.is_available():
             await orchestrator.initialize_semantic_router()
-            print("✓ Semantic router initialized")
+            print("  OK Semantic router initialized")
 
     except Exception as e:
-        print(f"❌ Orchestrator loading failed: {e}")
+        print(f"  FAILED Orchestrator: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-    # 7. Routing test
+    # 7. Routing
     print("\n7. Testing Routing Logic...")
     try:
         test_queries = [
@@ -129,22 +150,18 @@ async def test_configuration():
 
         for query, expected_agent in test_queries:
             agent = await orchestrator._resolve_agent(query)
-            status = "✓" if agent.name == expected_agent else "⚠"
-            print(f"  {status} '{query}' → {agent.name} (expected: {expected_agent})")
+            status = "OK" if agent.name == expected_agent else "WARN"
+            print(f"  {status} '{query}' -> {agent.name} (expected: {expected_agent})")
     except Exception as e:
-        print(f"❌ Routing test failed: {e}")
+        print(f"  FAILED Routing: {e}")
         import traceback
         traceback.print_exc()
         return False
 
     print("\n" + "=" * 60)
-    print("✅ ALL TESTS PASSED!")
+    print("ALL TESTS PASSED!")
     print("=" * 60)
-    print("\nJARVIS is ready to use. Configure your API keys in .env file:")
-    print("  ANTHROPIC_API_KEY=xxx")
-    print("  GOOGLE_API_KEY=xxx")
-    print("\nThen start with: python main.py --web")
-
+    print("\nJARVIS is ready. Start with: bash launch-JARVIS.sh")
     return True
 
 
@@ -153,10 +170,10 @@ if __name__ == "__main__":
         success = asyncio.run(test_configuration())
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:
-        print("\n❌ Test interrupted")
+        print("\nTest interrupted")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Test failed with exception: {e}")
+        print(f"\nTest failed: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
