@@ -47,7 +47,8 @@ class JARVISConfig:
         """Valide la configuration et retourne (is_valid, errors)"""
         errors = []
 
-        if not cls.ANTHROPIC_API_KEY and not cls.GOOGLE_API_KEY:
+        using_ollama = cls.DEFAULT_MODEL.startswith("ollama/")
+        if not using_ollama and not cls.ANTHROPIC_API_KEY and not cls.GOOGLE_API_KEY:
             errors.append("At least one API key must be configured (ANTHROPIC_API_KEY or GOOGLE_API_KEY)")
 
         if cls.ANTHROPIC_API_KEY:
