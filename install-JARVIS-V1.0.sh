@@ -131,6 +131,14 @@ setup_repo_dir() {
             info "Clonage du repo..."
             git clone https://github.com/equationstratos/jarvis-v1.0.git "$REPO_DIR"
         fi
+
+        # Si le script est lancé via curl|bash, se réexécuter depuis le repo local
+        # pour s'assurer de tourner sur la version mise à jour (évite le cache CDN GitHub)
+        local local_script="$REPO_DIR/install-JARVIS-V1.0.sh"
+        if [[ -f "$local_script" && "$(realpath "$0" 2>/dev/null || echo "$0")" != "$(realpath "$local_script" 2>/dev/null || echo "$local_script")" ]]; then
+            info "Relance depuis le repo local (version à jour)..."
+            exec bash "$local_script"
+        fi
     fi
 
     cd "$REPO_DIR"
