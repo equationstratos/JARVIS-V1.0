@@ -232,6 +232,11 @@ setup_env() {
     info "Configuration du fichier .env..."
     if [[ -f ".env" ]]; then
         warn ".env déjà présent. Paramètres existants conservés."
+        # Patch LITELLM_LOG=FALSE → WARNING (cause un crash au démarrage de litellm)
+        if grep -q "^LITELLM_LOG=FALSE" .env 2>/dev/null; then
+            sed -i 's|^LITELLM_LOG=FALSE|LITELLM_LOG=WARNING|' .env
+            success "Corrigé : LITELLM_LOG=FALSE → WARNING dans .env"
+        fi
         return
     fi
 
