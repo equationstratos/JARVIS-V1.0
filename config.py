@@ -38,6 +38,49 @@ class JARVISConfig:
     ENABLE_VECTOR_ROUTING = os.getenv("ENABLE_VECTOR_ROUTING", "false").lower() == "true"
     ENABLE_OBSERVABILITY = os.getenv("ENABLE_OBSERVABILITY", "false").lower() == "true"
 
+    # IP Whitelist
+    ENABLE_IP_WHITELIST = os.getenv("ENABLE_IP_WHITELIST", "false").lower() == "true"
+    # Comma-separated list of authorized IPs (e.g. "82.1.2.3,192.168.1.10")
+    # Local/private IPs are always allowed regardless of this setting
+    ALLOWED_IPS_RAW = os.getenv("ALLOWED_IPS", "")
+
+    @classmethod
+    def get_allowed_ips(cls) -> set:
+        """Returns the set of explicitly whitelisted IPs from .env"""
+        ips = {ip.strip() for ip in cls.ALLOWED_IPS_RAW.split(",") if ip.strip()}
+        ips.add("127.0.0.1")  # loopback always allowed
+        return ips
+
+    @classmethod
+    def add_allowed_ip(cls, ip: str) -> None:
+        """Adds an IP to ALLOWED_IPS in the .env file (persists across restarts)"""
+        import re
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+        if not os.path.exists(env_path):
+            raise FileNotFoundError(f".env file not found at {env_path}")
+
+        with open(env_path, "r") as f:
+            content = f.read()
+
+        # Parse current IPs
+        match = re.search(r"^ALLOWED_IPS=(.*)$", content, re.MULTILINE)
+        if match:
+            current = {x.strip() for x in match.group(1).split(",") if x.strip()}
+            current.add(ip)
+            new_line = f"ALLOWED_IPS={','.join(sorted(current))}"
+            content = re.sub(r"^ALLOWED_IPS=.*$", new_line, content, flags=re.MULTILINE)
+        else:
+            content += f"\nALLOWED_IPS={ip}\n"
+
+        # Also enable whitelist if it wasn't already
+        if re.search(r"^ENABLE_IP_WHITELIST=false", content, re.MULTILINE):
+            content = re.sub(r"^ENABLE_IP_WHITELIST=.*$", "ENABLE_IP_WHITELIST=true", content, flags=re.MULTILINE)
+
+        with open(env_path, "w") as f:
+            f.write(content)
+
+        print(f"[JARVIS] IP {ip} ajoutée à la whitelist dans .env")
+
     # Observability
     OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() == "true"
     OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
