@@ -253,6 +253,34 @@ install_mobile_deps() {
     fi
 }
 
+# ── PM2 (gestionnaire de services) ───────────────────────────
+install_pm2() {
+    info "Installation de PM2 (gestionnaire de services)..."
+    if has_cmd pm2; then
+        success "PM2 déjà installé : $(pm2 --version)"
+    else
+        if has_cmd npm; then
+            npm install -g pm2 --silent
+            success "PM2 installé : $(pm2 --version)"
+        else
+            warn "npm non disponible, PM2 non installé"
+            warn "Pour installer PM2 manuellement : npm install -g pm2"
+            return
+        fi
+    fi
+
+    info "Configuration de PM2 pour les services JARVIS..."
+    # Démarrer les services une première fois pour les enregistrer dans PM2
+    pm2 start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
+    pm2 save --force 2>/dev/null || true
+    success "Services PM2 enregistrés"
+    echo ""
+    warn "IMPORTANT : Pour activer le redémarrage automatique au boot :"
+    warn "  1. Exécutez : pm2 startup"
+    warn "  2. Copiez-collez la commande 'sudo env...' qui s'affiche"
+    warn "  3. Puis : pm2 save"
+}
+
 # ── Validation basique ────────────────────────────────────────
 run_validation() {
     info "Validation de l'installation..."
@@ -270,20 +298,35 @@ print_success() {
     echo -e "${GREEN}${BOLD}   JARVIS-V1.0 installé avec succès !${NC}"
     echo -e "${GREEN}${BOLD}================================================${NC}"
     echo ""
-    echo -e "${BOLD}Démarrer JARVIS (tous les serveurs) :${NC}"
-    echo -e "  ${CYAN}cd ${REPO_DIR}${NC}"
-    echo -e "  ${CYAN}source venv/bin/activate${NC}"
-    echo -e "  ${CYAN}bash launch-JARVIS.sh${NC}"
+    echo -e "${BOLD}Démarrer JARVIS :${NC}"
     echo ""
-    echo -e "${BOLD}Serveurs démarrés :${NC}"
-    echo -e "  Web UI       →  http://localhost:8501"
-    echo -e "  Mobile UI    →  http://localhost:3001"
-    echo -e "  TTS (optionnel) → http://localhost:8000"
+    echo -e "  ${CYAN}# Avec PM2 (recommandé — auto-restart, démarrage au boot)${NC}"
+    echo -e "  ${CYAN}bash ${REPO_DIR}/pm2-manager.sh start${NC}"
+    echo ""
+    echo -e "  ${CYAN}# Ou directement (session terminal)${NC}"
+    echo -e "  ${CYAN}bash ${REPO_DIR}/launch-JARVIS.sh${NC}"
+    echo ""
+    echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
+    echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
+    echo -e "  ${CYAN}pm2 save${NC}"
+    echo ""
+    echo -e "${BOLD}Services disponibles :${NC}"
+    echo -e "  Web UI          →  http://localhost:8501"
+    echo -e "  Mobile UI       →  http://localhost:3001"
+    echo -e "  TTS Voxtral     →  http://localhost:8001  (si MISTRAL_API_KEY)"
+    echo -e "  TTS Kokoro      →  http://localhost:8000  (si ../jarvis-voice/)"
+    echo ""
+    echo -e "${BOLD}Commandes PM2 utiles :${NC}"
+    echo -e "  pm2 status          — état de tous les services"
+    echo -e "  pm2 logs            — logs en temps réel"
+    echo -e "  pm2 monit           — tableau de bord interactif"
+    echo -e "  pm2 restart all     — redémarrer tout"
     echo ""
     echo -e "${BOLD}App mobile native (React Native) :${NC}"
     echo -e "  cd mobile && npx expo start"
     echo ""
     echo -e "${BOLD}Lancer les tests :${NC}"
+    echo -e "  source venv/bin/activate"
     echo -e "  python TESTS/test_load.py"
     echo -e "  python TESTS/test_configuration.py"
     echo ""
@@ -302,6 +345,7 @@ main() {
     pull_ollama_models
     setup_env
     install_mobile_deps
+    install_pm2
     run_validation
     print_success
 }
