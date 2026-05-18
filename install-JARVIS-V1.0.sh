@@ -152,6 +152,8 @@ install_python_deps() {
     pip install -r requirements.txt --quiet
     # chromadb est utilisé par web_v2.py mais pas encore dans requirements.txt
     pip install chromadb --quiet 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
+    # mistralai est requis pour le serveur TTS Voxtral
+    pip install mistralai --quiet 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
     success "Dépendances Python installées"
 }
 
@@ -233,8 +235,9 @@ setup_env() {
     success ".env créé avec les defaults Ollama"
     echo ""
     info "  (Optionnel) Ajoutez vos clés cloud dans .env :"
-    info "    ANTHROPIC_API_KEY=sk-ant-..."
-    info "    GOOGLE_API_KEY=..."
+    info "    ANTHROPIC_API_KEY=sk-ant-...   (Claude)"
+    info "    GOOGLE_API_KEY=...             (Gemini)"
+    info "    MISTRAL_API_KEY=...            (Voxtral TTS)"
 }
 
 # ── App mobile ────────────────────────────────────────────────

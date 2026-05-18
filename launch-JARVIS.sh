@@ -40,9 +40,10 @@ success "Environnement virtuel: $(which python)"
 
 # ── Arrêt des anciens processus ───────────────────────────────
 info "Nettoyage des processus existants..."
-pkill -f "tts_server4.py" 2>/dev/null && echo "  Arrêt ancien serveur TTS" || true
-pkill -f "main.py --web"  2>/dev/null && echo "  Arrêt ancien backend" || true
-pkill -f "webmobile.py"   2>/dev/null && echo "  Arrêt ancien proxy mobile" || true
+pkill -f "tts_server4.py"    2>/dev/null && echo "  Arrêt ancien Kokoro TTS" || true
+pkill -f "voxtral_server.py" 2>/dev/null && echo "  Arrêt ancien Voxtral TTS" || true
+pkill -f "main.py --web"     2>/dev/null && echo "  Arrêt ancien backend" || true
+pkill -f "webmobile.py"      2>/dev/null && echo "  Arrêt ancien proxy mobile" || true
 sleep 0.5
 
 # ── Logs ──────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ LOG_DIR="$SCRIPT_DIR/Logs"
 mkdir -p "$LOG_DIR"
 
 TTS_PID=""
+VOXTRAL_PID=""
 BACKEND_PID=""
 MOBILE_PID=""
 
@@ -94,7 +96,31 @@ else
     warn "Mode texte uniquement. Consultez README.md pour l'installation du TTS."
 fi
 
-# ── 2. Backend :8501 ──────────────────────────────────────────
+# ── 2. Voxtral TTS :8001 (optionnel — nécessite MISTRAL_API_KEY) ──
+VOXTRAL_SCRIPT="$SCRIPT_DIR/tts/voxtral_server.py"
+if [[ -f "$VOXTRAL_SCRIPT" ]]; then
+    # Charger .env pour vérifier la clé Mistral
+    MISTRAL_KEY=""
+    [[ -f "$SCRIPT_DIR/.env" ]] && MISTRAL_KEY=$(grep -E "^MISTRAL_API_KEY=.+" "$SCRIPT_DIR/.env" 2>/dev/null | cut -d= -f2- || true)
+
+    if [[ -n "$MISTRAL_KEY" ]]; then
+        info "Démarrage du serveur Voxtral TTS..."
+        python "$VOXTRAL_SCRIPT" >"$LOG_DIR/voxtral.log" 2>&1 &
+        VOXTRAL_PID=$!
+        if wait_for_port 8001 "Voxtral"; then
+            success "Voxtral prêt sur :8001 (PID $VOXTRAL_PID)"
+        else
+            warn "Voxtral n'a pas démarré. Consultez: $LOG_DIR/voxtral.log"
+            VOXTRAL_PID=""
+        fi
+    else
+        warn "Voxtral TTS désactivé — ajoutez MISTRAL_API_KEY dans .env pour l'activer"
+    fi
+else
+    warn "Voxtral TTS non trouvé ($VOXTRAL_SCRIPT)"
+fi
+
+# ── 3. Backend :8501 ──────────────────────────────────────────
 info "Démarrage du backend JARVIS..."
 python "$SCRIPT_DIR/main.py" --web >"$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
@@ -106,7 +132,7 @@ else
     cat "$LOG_DIR/backend.log" | tail -20
 fi
 
-# ── 3. Mobile proxy :3001 ─────────────────────────────────────
+# ── 4. Mobile proxy :3001 ─────────────────────────────────────
 info "Démarrage du proxy mobile..."
 python "$SCRIPT_DIR/webmobile.py" >"$LOG_DIR/mobile.log" 2>&1 &
 MOBILE_PID=$!
@@ -124,7 +150,8 @@ echo -e "${CYAN}${BOLD}  JARVIS-V1.0 en cours d'exécution${NC}"
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════${NC}"
 echo -e "  Interface Web    →  ${BOLD}http://localhost:8501${NC}"
 echo -e "  Interface Mobile →  ${BOLD}http://localhost:3001${NC}"
-[[ -n "$TTS_PID" ]] && echo -e "  TTS (Kokoro)     →  ${BOLD}http://localhost:8000${NC}"
+[[ -n "$TTS_PID"     ]] && echo -e "  TTS Kokoro       →  ${BOLD}http://localhost:8000${NC}"
+[[ -n "$VOXTRAL_PID" ]] && echo -e "  TTS Voxtral      →  ${BOLD}http://localhost:8001${NC}"
 echo -e "  Logs             →  ${BOLD}$LOG_DIR/${NC}"
 echo ""
 echo -e "  Appuyez sur ${BOLD}Ctrl+C${NC} pour tout arrêter"
@@ -135,13 +162,15 @@ echo ""
 cleanup() {
     echo ""
     info "Arrêt de tous les services..."
-    [[ -n "${BACKEND_PID:-}" ]] && kill "$BACKEND_PID" 2>/dev/null && echo "  Backend arrêté" || true
-    [[ -n "${MOBILE_PID:-}"  ]] && kill "$MOBILE_PID"  2>/dev/null && echo "  Proxy mobile arrêté" || true
-    [[ -n "${TTS_PID:-}"     ]] && kill "$TTS_PID"     2>/dev/null && echo "  TTS arrêté" || true
+    [[ -n "${BACKEND_PID:-}"  ]] && kill "$BACKEND_PID"  2>/dev/null && echo "  Backend arrêté" || true
+    [[ -n "${MOBILE_PID:-}"   ]] && kill "$MOBILE_PID"   2>/dev/null && echo "  Proxy mobile arrêté" || true
+    [[ -n "${TTS_PID:-}"      ]] && kill "$TTS_PID"      2>/dev/null && echo "  Kokoro TTS arrêté" || true
+    [[ -n "${VOXTRAL_PID:-}"  ]] && kill "$VOXTRAL_PID"  2>/dev/null && echo "  Voxtral TTS arrêté" || true
     sleep 0.5
-    pkill -f "main.py --web"  2>/dev/null || true
-    pkill -f "webmobile.py"   2>/dev/null || true
-    pkill -f "tts_server4.py" 2>/dev/null || true
+    pkill -f "main.py --web"     2>/dev/null || true
+    pkill -f "webmobile.py"      2>/dev/null || true
+    pkill -f "tts_server4.py"    2>/dev/null || true
+    pkill -f "voxtral_server.py" 2>/dev/null || true
     success "Services arrêtés. À bientôt."
     exit 0
 }

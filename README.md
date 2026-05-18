@@ -32,22 +32,23 @@ JARVIS est un système multi-agents IA qui route automatiquement vos requêtes v
           │   LiteLLM (multi-modèles)│
           └──────────┬──────────────┘
                      │
-     ┌───────────────┼───────────────┐
-     │               │               │
-┌────▼─────┐  ┌──────▼──────┐  ┌────▼────────┐
-│  Ollama  │  │  ChromaDB   │  │  TTS Kokoro │
-│ :11434   │  │  (mémoire)  │  │  :8000 (opt)│
-│ mistral  │  │             │  │             │
-│ llama3   │  └─────────────┘  └─────────────┘
+     ┌───────────────┼──────────────────┐
+     │               │                  │
+┌────▼─────┐  ┌──────▼──────┐  ┌───────▼──────────────┐
+│  Ollama  │  │  ChromaDB   │  │  TTS (optionnel)      │
+│ :11434   │  │  (mémoire)  │  │  Kokoro   :8000       │
+│ mistral  │  │             │  │  Voxtral  :8001       │
+│ llama3   │  └─────────────┘  └───────────────────────┘
 └──────────┘
 ```
 
-| Service       | Port  | Rôle                                  |
-|---------------|-------|---------------------------------------|
-| Backend       | 8501  | API principale, orchestration agents   |
-| Mobile proxy  | 3001  | Interface mobile + proxy TTS           |
-| TTS (Kokoro)  | 8000  | Synthèse vocale (optionnel)            |
-| Ollama        | 11434 | Modèles IA locaux                      |
+| Service          | Port  | Rôle                                       |
+|------------------|-------|--------------------------------------------|
+| Backend          | 8501  | API principale, orchestration agents        |
+| Mobile proxy     | 3001  | Interface mobile + proxy TTS               |
+| TTS Kokoro       | 8000  | Synthèse vocale locale (optionnel)         |
+| TTS Voxtral      | 8001  | Synthèse vocale Mistral AI (optionnel)     |
+| Ollama           | 11434 | Modèles IA locaux                          |
 
 ---
 
@@ -239,7 +240,9 @@ Navigation clavier, sélection d'agent, chat en mode texte.
 
 ## TTS — Synthèse vocale (optionnel)
 
-JARVIS supporte le TTS via **Kokoro** (voix française de haute qualité).
+JARVIS supporte deux moteurs TTS, sélectionnables dans l'interface web (Settings → TTS Engine) :
+
+### Kokoro (port 8000) — voix française locale, gratuit
 
 Installation dans le dossier parent :
 
@@ -252,7 +255,31 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Le fichier `launch-JARVIS.sh` détecte automatiquement `../jarvis-voice/tts_server4.py` et le démarre.
+`launch-JARVIS.sh` détecte automatiquement `../jarvis-voice/tts_server4.py` et le démarre.  
+Voix disponible : `ff_siwis` (française féminine).
+
+### Voxtral (port 8001) — IA Mistral, qualité supérieure
+
+Voxtral est le moteur TTS de Mistral AI. Il nécessite une clé API Mistral.
+
+**Configuration :**
+```bash
+# Dans .env
+MISTRAL_API_KEY=votre-cle-mistral
+```
+
+`launch-JARVIS.sh` démarre automatiquement `tts/voxtral_server.py` si `MISTRAL_API_KEY` est configurée.
+
+Voix disponibles : `fr_female`, `fr_male`
+
+**Obtenir une clé Mistral :** https://console.mistral.ai/
+
+### Changer de moteur TTS
+
+Dans l'interface web (`http://localhost:8501`) :  
+**Settings → TTS Engine → Kokoro / Voxtral**
+
+L'interface mobile (`http://localhost:3001`) utilise le proxy `/tts` avec le paramètre `engine`.
 
 ---
 
