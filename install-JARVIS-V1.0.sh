@@ -349,57 +349,51 @@ install_mobile_deps() {
 install_pm2() {
     info "Installation de PM2 (gestionnaire de services)..."
 
-    # npm config get prefix = chemin global npm (ex: /usr/local ou /usr)
-    # Le binaire pm2 est dans {prefix}/bin/pm2
-    npm_global_bin() {
-        local prefix
-        prefix="$(npm config get prefix 2>/dev/null)"
-        echo "${prefix}/bin"
-    }
+    if ! has_cmd npm; then
+        warn "npm non disponible — PM2 non installé (app mobile requise)"
+        return
+    fi
 
-    find_pm2() {
-        command -v pm2 2>/dev/null \
-            || { local b; b="$(npm_global_bin)/pm2"; [[ -x "$b" ]] && echo "$b"; } \
-            || echo ""
-    }
+    # Installer pm2 dans ~/.npm-global (sans sudo, fonctionne partout)
+    local NPM_GLOBAL="$HOME/.npm-global"
+    mkdir -p "$NPM_GLOBAL"
+    npm config set prefix "$NPM_GLOBAL" 2>/dev/null || true
+    export PATH="$NPM_GLOBAL/bin:$PATH"
 
-    PM2_BIN="$(find_pm2)"
+    # Ajouter au PATH de façon permanente dans ~/.bashrc
+    if ! grep -q "npm-global" "$HOME/.bashrc" 2>/dev/null; then
+        echo "export PATH=\"$NPM_GLOBAL/bin:\$PATH\"" >> "$HOME/.bashrc"
+    fi
 
-    if [[ -n "$PM2_BIN" ]]; then
-        success "PM2 déjà installé : $("$PM2_BIN" --version 2>/dev/null || echo 'version inconnue')"
+    local PM2_BIN="$NPM_GLOBAL/bin/pm2"
+
+    if [[ -x "$PM2_BIN" ]]; then
+        success "PM2 déjà installé : $("$PM2_BIN" --version)"
     else
-        if ! has_cmd npm; then
-            warn "npm non disponible, PM2 non installé"
-            warn "Pour installer PM2 manuellement : sudo npm install -g pm2"
-            return
-        fi
+        info "Installation de pm2..."
+        npm install -g pm2 2>&1 | grep -E "^(added|npm error)" | head -3 || true
 
-        info "Installation de pm2 via npm (sudo)..."
-        sudo npm install -g pm2 2>&1 | grep -v "^npm warn" | tail -5 || true
-
-        # Ajouter le chemin global npm au PATH pour cette session
-        NPM_GLOBAL_BIN="$(npm_global_bin)"
-        export PATH="$NPM_GLOBAL_BIN:$PATH"
-
-        PM2_BIN="$(find_pm2)"
-        if [[ -z "$PM2_BIN" ]]; then
-            warn "pm2 introuvable après installation (chemin testé : $NPM_GLOBAL_BIN)"
-            warn "Réessayez manuellement : sudo npm install -g pm2"
+        if [[ ! -x "$PM2_BIN" ]]; then
+            warn "PM2 introuvable après installation — vérifiez les logs npm ci-dessus"
             return
         fi
         success "PM2 installé : $("$PM2_BIN" --version)"
     fi
 
-    # Utiliser le chemin absolu pour les appels PM2 suivants
-    info "Configuration de PM2 pour les services JARVIS..."
+    info "Démarrage des services JARVIS via PM2..."
     "$PM2_BIN" start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
     "$PM2_BIN" save --force 2>/dev/null || true
-    success "Services PM2 enregistrés"
-    echo ""
-    warn "IMPORTANT : Pour activer le redémarrage automatique au boot :"
-    warn "  1. Exécutez : pm2 startup"
-    warn "  2. Copiez-collez la commande 'sudo env...' qui s'affiche"
-    warn "  3. Puis : pm2 save"
+    success "Services PM2 démarrés et sauvegardés"
+
+    # Configurer le démarrage automatique au boot (silencieux)
+    local startup_cmd
+    startup_cmd=$("$PM2_BIN" startup 2>/dev/null | grep "^sudo env" | head -1)
+    if [[ -n "$startup_cmd" ]]; then
+        info "Activation du démarrage automatique au boot..."
+        eval "$startup_cmd" 2>/dev/null && "$PM2_BIN" save --force 2>/dev/null \
+            && success "Démarrage automatique au boot activé" \
+            || warn "Démarrage auto au boot : exécutez 'pm2 startup' et collez la commande sudo affichée"
+    fi
 }
 
 # ── Validation basique ────────────────────────────────────────
@@ -419,22 +413,14 @@ print_success() {
     echo -e "${GREEN}${BOLD}   JARVIS-V1.0 installé avec succès !${NC}"
     echo -e "${GREEN}${BOLD}================================================${NC}"
     echo ""
-    echo -e "${BOLD}Démarrer JARVIS :${NC}"
+    echo -e "${BOLD}JARVIS est démarré via PM2 (auto-restart actif) :${NC}"
     echo ""
-    echo -e "  ${CYAN}# Avec PM2 (recommandé — auto-restart, démarrage au boot)${NC}"
-    echo -e "  ${CYAN}bash ${REPO_DIR}/pm2-manager.sh start${NC}"
+    echo -e "  ${CYAN}pm2 status${NC}      — voir l'état des services"
+    echo -e "  ${CYAN}pm2 logs${NC}        — logs en temps réel"
+    echo -e "  ${CYAN}pm2 restart all${NC} — redémarrer tout"
     echo ""
-    echo -e "  ${CYAN}# Ou directement (session terminal)${NC}"
-    echo -e "  ${CYAN}bash ${REPO_DIR}/launch-JARVIS.sh${NC}"
-    echo ""
-    echo -e "${BOLD}Si 'pm2: command not found' après l'installation :${NC}"
-    echo    "  sudo npm install -g pm2"
-    echo    "  # ou ajoutez le chemin global npm à votre PATH :"
-    echo    "  export PATH=\"\$(npm config get prefix)/bin:\$PATH\""
-    echo ""
-    echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
-    echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
-    echo -e "  ${CYAN}pm2 save${NC}"
+    echo -e "${BOLD}Si PM2 n'est pas dans votre PATH (nouveau terminal) :${NC}"
+    echo -e "  ${CYAN}source ~/.bashrc${NC}  — recharger le PATH"
     echo ""
     echo -e "${BOLD}Services disponibles :${NC}"
     echo -e "  Web UI          →  http://localhost:8501"
