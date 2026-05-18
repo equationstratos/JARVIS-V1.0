@@ -140,6 +140,11 @@ setup_repo_dir() {
 # ── Environnement virtuel Python ──────────────────────────────
 setup_venv() {
     info "Configuration de l'environnement Python..."
+    # Recréer le venv si le dossier existe mais est cassé (activate manquant)
+    if [[ -d "venv" && ! -f "venv/bin/activate" ]]; then
+        warn "Environnement virtuel corrompu détecté, recréation..."
+        rm -rf venv
+    fi
     if [[ ! -d "venv" ]]; then
         python3 -m venv venv
         success "Environnement virtuel créé"
