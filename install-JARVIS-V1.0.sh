@@ -250,7 +250,78 @@ setup_env() {
     info "    ANTHROPIC_API_KEY=sk-ant-...   (Claude)"
     info "    GOOGLE_API_KEY=...             (Gemini)"
     info "    MISTRAL_API_KEY=...            (Voxtral TTS)"
+
+    # ── Whitelist IP (interactive) ──────────────────────────────
+    setup_ip_whitelist
 }
+
+setup_ip_whitelist() {
+    echo ""
+    echo -e "${BOLD}Sécurité — Filtrage IP (whitelist)${NC}"
+    echo -e "  Par défaut, JARVIS accepte toutes les connexions."
+    echo -e "  Vous pouvez restreindre l'accès à certaines IPs seulement."
+    echo -e "  (Les IPs locales 192.168.x.x / 10.x.x.x sont toujours autorisées)"
+    echo ""
+
+    # Pas de prompt si stdin n'est pas un terminal (ex: curl | bash)
+    if [[ ! -t 0 ]]; then
+        warn "Mode non-interactif détecté — whitelist IP désactivée par défaut."
+        warn "Activez-la manuellement : python main.py --authorize-ip=VOTRE_IP"
+        return
+    fi
+
+    local enable_whitelist="n"
+    read -r -p "$(echo -e "${CYAN}Activer la whitelist IP ? (o/N) :${NC} ")" enable_whitelist
+    enable_whitelist="${enable_whitelist,,}"  # lowercase
+
+    if [[ "$enable_whitelist" != "o" && "$enable_whitelist" != "oui" && "$enable_whitelist" != "y" && "$enable_whitelist" != "yes" ]]; then
+        info "Whitelist IP désactivée. Tout le monde peut accéder à JARVIS."
+        return
+    fi
+
+    # Activer dans .env
+    if [[ "$OS" == "macOS" ]]; then
+        sed -i '' 's|^ENABLE_IP_WHITELIST=.*|ENABLE_IP_WHITELIST=true|' .env
+    else
+        sed -i 's|^ENABLE_IP_WHITELIST=.*|ENABLE_IP_WHITELIST=true|' .env
+    fi
+
+    echo ""
+    echo -e "  Entrez les IPs autorisées ${BOLD}séparées par des virgules${NC}"
+    echo -e "  Exemple : ${CYAN}82.225.100.200,176.158.10.20${NC}"
+    echo -e "  (Laissez vide pour n'autoriser que le réseau local)"
+    echo ""
+    read -r -p "$(echo -e "${CYAN}IPs autorisées :${NC} ")" ip_input
+
+    if [[ -n "$ip_input" ]]; then
+        # Valider et nettoyer les IPs
+        local valid_ips=()
+        IFS=',' read -ra ip_list <<< "$ip_input"
+        for ip in "${ip_list[@]}"; do
+            ip="${ip// /}"  # strip spaces
+            if python3 -c "import ipaddress; ipaddress.ip_address('$ip')" 2>/dev/null; then
+                valid_ips+=("$ip")
+            else
+                warn "IP ignorée (format invalide) : $ip"
+            fi
+        done
+
+        if [[ ${#valid_ips[@]} -gt 0 ]]; then
+            local ips_joined
+            ips_joined=$(IFS=','; echo "${valid_ips[*]}")
+            if [[ "$OS" == "macOS" ]]; then
+                sed -i '' "s|^ALLOWED_IPS=.*|ALLOWED_IPS=${ips_joined}|" .env
+            else
+                sed -i "s|^ALLOWED_IPS=.*|ALLOWED_IPS=${ips_joined}|" .env
+            fi
+            success "Whitelist activée pour : ${ips_joined}"
+        fi
+    else
+        info "Aucune IP externe ajoutée — seul le réseau local a accès."
+    fi
+
+    echo ""
+    info "Pour ajouter une IP plus tard : ${BOLD}python main.py --authorize-ip=82.1.2.3${NC}"
 
 # ── App mobile ────────────────────────────────────────────────
 install_mobile_deps() {

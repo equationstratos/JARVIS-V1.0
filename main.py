@@ -11,12 +11,25 @@ from core.orchestrator import Orchestrator
 @click.command()
 @click.option('--tui', is_flag=True, help='Start the TUI interface')
 @click.option('--web', is_flag=True, help='Start the Web Dashboard')
-def main(tui, web):
+@click.option('--authorize-ip', 'authorize_ip', default=None, metavar='IP',
+              help='Add an IP address to the whitelist (e.g. --authorize-ip=82.1.2.3)')
+def main(tui, web, authorize_ip):
     """JARVIS: Modular Agentic AI Ecosystem"""
-    
+
+    if authorize_ip:
+        import ipaddress
+        try:
+            ipaddress.ip_address(authorize_ip)
+        except ValueError:
+            print(f"[ERREUR] '{authorize_ip}' n'est pas une adresse IP valide.")
+            sys.exit(1)
+        from config import JARVISConfig
+        JARVISConfig.add_allowed_ip(authorize_ip)
+        sys.exit(0)
+
     agents_dir = os.path.join(os.path.dirname(__file__), "agents/configs")
     orchestrator = Orchestrator(agents_dir)
-    
+
     if tui:
         from interfaces.tui import JARVISApp
         app = JARVISApp(orchestrator)

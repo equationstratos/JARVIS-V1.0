@@ -109,33 +109,36 @@ app.mount("/images", StaticFiles(directory=os.path.join(project_root, "interface
 # ==========================================
 # SÉCURITÉ : BLOCAGE IP (WHITELIST)
 # ==========================================
-
-# Mets ici les adresses IP qui ont le droit de se connecter.
-# "127.0.0.1" permet au serveur de se parler à lui-même (très important).
-# Ajoute l'IP de ton ordinateur ou de ton téléphone (ex: "82.123.45.67" ou "192.168.1.50").
-# "192.168.0.0/16" accepte toutes les IPs du réseau local
-ALLOWED_IPS = {"127.0.0.1", "82.225.219.196", "176.158.198.218"} 
+# Configuré via .env :
+#   ENABLE_IP_WHITELIST=true          Active le filtrage (false = tout le monde accède)
+#   ALLOWED_IPS=82.1.2.3,192.168.1.10  IPs autorisées (séparées par virgule)
+#
+# Ajouter une IP sans éditer .env :
+#   python main.py --authorize-ip=82.1.2.3
+#
+# Les IPs locales/privées (192.168.x.x, 10.x.x.x, 172.16-31.x.x) sont
+# toujours autorisées indépendamment du whitelist.
 
 def is_local_ip(ip: str) -> bool:
-    """Check if IP is from local network (192.168.x.x, 10.x.x.x, 172.16-31.x.x)"""
+    """Returns True if IP is private/loopback (LAN access always allowed)"""
     import ipaddress
     try:
-        ip_obj = ipaddress.ip_address(ip)
-        return ip_obj.is_private or ip_obj.is_loopback
+        return ipaddress.ip_address(ip).is_private or ipaddress.ip_address(ip).is_loopback
     except ValueError:
         return False
 
 @app.middleware("http")
 async def restrict_ip_middleware(request: Request, call_next):
-    client_ip = request.client.host if request.client else "unknown"
+    from config import JARVISConfig
+    if not JARVISConfig.ENABLE_IP_WHITELIST:
+        return await call_next(request)
 
-    # Allow local network IPs and whitelisted IPs
-    if client_ip in ALLOWED_IPS or is_local_ip(client_ip):
-        response = await call_next(request)
-        return response
-    else:
-        print(f"⚠️ BLOCKED - IP: {client_ip} (not in whitelist or local network)")
-        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    client_ip = request.client.host if request.client else "unknown"
+    if client_ip in JARVISConfig.get_allowed_ips() or is_local_ip(client_ip):
+        return await call_next(request)
+
+    print(f"⚠️ BLOCKED - IP: {client_ip} (not in whitelist)")
+    return JSONResponse(status_code=403, content={"error": "Access denied"})
 
 # ═══════════════════════════════════════════════════════════════
 # ROUTES PRINCIPALES (existantes)
