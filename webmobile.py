@@ -31,8 +31,9 @@ app.add_middleware(
 )
 
 # Configuration
-JARVIS_BACKEND = os.getenv("JARVIS_BACKEND", "http://127.0.0.1:8501")
-TTS_BACKEND = os.getenv("TTS_BACKEND", "http://127.0.0.1:8000")
+JARVIS_BACKEND      = os.getenv("JARVIS_BACKEND",      "http://127.0.0.1:8501")
+TTS_BACKEND         = os.getenv("TTS_BACKEND",         "http://127.0.0.1:8000")
+TTS_VOXTRAL_BACKEND = os.getenv("TTS_VOXTRAL_BACKEND", "http://127.0.0.1:8001")
 
 def find_config_file():
     """Search for models_config.json in multiple common locations."""
@@ -320,26 +321,39 @@ async def set_api_keys(request: Request):
 
 @app.post("/tts")
 async def tts_proxy(request: Request):
-    """Proxy TTS requests to the Kokoro server on port 8000."""
+    """Proxy TTS vers Kokoro (port 8000) ou Voxtral (port 8001) selon le paramètre engine."""
     try:
         body = await request.json()
         text = (body.get("text") or "").strip()
         if not text:
             return JSONResponse({"error": "Empty text"}, status_code=400)
+
+        engine = body.get("engine", "kokoro").lower()
+        if engine == "voxtral":
+            backend = TTS_VOXTRAL_BACKEND
+            default_voice = "fr_female"
+        else:
+            backend = TTS_BACKEND
+            default_voice = "ff_siwis"
+
         async with httpx.AsyncClient(timeout=60.0) as client:
             r = await client.post(
-                f"{TTS_BACKEND}/v1/audio/speech",
+                f"{backend}/v1/audio/speech",
                 json={
                     "text": text,
-                    "voice": body.get("voice", "ff_siwis"),
+                    "voice": body.get("voice", default_voice),
                     "speed": float(body.get("speed", 1.0)),
                 },
             )
             if r.status_code == 200:
                 return Response(content=r.content, media_type="audio/wav")
-            return JSONResponse({"error": f"TTS backend error {r.status_code}: {r.text[:200]}"}, status_code=502)
+            return JSONResponse(
+                {"error": f"TTS backend ({engine}) error {r.status_code}: {r.text[:200]}"},
+                status_code=502,
+            )
     except httpx.ConnectError:
-        return JSONResponse({"error": f"TTS backend unreachable at {TTS_BACKEND}"}, status_code=503)
+        backend_url = TTS_VOXTRAL_BACKEND if engine == "voxtral" else TTS_BACKEND
+        return JSONResponse({"error": f"TTS backend unreachable at {backend_url}"}, status_code=503)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 

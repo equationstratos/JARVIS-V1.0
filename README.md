@@ -32,22 +32,23 @@ JARVIS est un système multi-agents IA qui route automatiquement vos requêtes v
           │   LiteLLM (multi-modèles)│
           └──────────┬──────────────┘
                      │
-     ┌───────────────┼───────────────┐
-     │               │               │
-┌────▼─────┐  ┌──────▼──────┐  ┌────▼────────┐
-│  Ollama  │  │  ChromaDB   │  │  TTS Kokoro │
-│ :11434   │  │  (mémoire)  │  │  :8000 (opt)│
-│ mistral  │  │             │  │             │
-│ llama3   │  └─────────────┘  └─────────────┘
+     ┌───────────────┼──────────────────┐
+     │               │                  │
+┌────▼─────┐  ┌──────▼──────┐  ┌───────▼──────────────┐
+│  Ollama  │  │  ChromaDB   │  │  TTS (optionnel)      │
+│ :11434   │  │  (mémoire)  │  │  Kokoro   :8000       │
+│ mistral  │  │             │  │  Voxtral  :8001       │
+│ llama3   │  └─────────────┘  └───────────────────────┘
 └──────────┘
 ```
 
-| Service       | Port  | Rôle                                  |
-|---------------|-------|---------------------------------------|
-| Backend       | 8501  | API principale, orchestration agents   |
-| Mobile proxy  | 3001  | Interface mobile + proxy TTS           |
-| TTS (Kokoro)  | 8000  | Synthèse vocale (optionnel)            |
-| Ollama        | 11434 | Modèles IA locaux                      |
+| Service          | Port  | Rôle                                       |
+|------------------|-------|--------------------------------------------|
+| Backend          | 8501  | API principale, orchestration agents        |
+| Mobile proxy     | 3001  | Interface mobile + proxy TTS               |
+| TTS Kokoro       | 8000  | Synthèse vocale locale (optionnel)         |
+| TTS Voxtral      | 8001  | Synthèse vocale Mistral AI (optionnel)     |
+| Ollama           | 11434 | Modèles IA locaux                          |
 
 ---
 
@@ -170,33 +171,61 @@ GOOGLE_API_KEY=AIza...              # Gemini 2.0 Flash
 
 ## Démarrage
 
-### Tous les serveurs d'un coup (recommandé)
+### Avec PM2 — recommandé (auto-restart, démarrage au boot)
+
+PM2 surveille les processus et les redémarre automatiquement en cas de crash.
 
 ```bash
-source venv/bin/activate
-bash launch-JARVIS.sh
+# Démarrer tous les services
+bash pm2-manager.sh start
+
+# Voir l'état
+pm2 status
+
+# Logs en temps réel
+pm2 logs
+
+# Tableau de bord interactif
+pm2 monit
 ```
 
-Ce script démarre automatiquement :
-- **TTS Kokoro** `:8000` (si `../jarvis-voice/` est présent)
-- **Backend** `:8501`
-- **Proxy mobile** `:3001`
+#### Activer le démarrage automatique au boot
 
-Arrêt propre : `Ctrl+C`
+```bash
+pm2 startup          # Affiche une commande sudo à copier-coller
+# → Coller la commande 'sudo env...' affichée
+pm2 save             # Sauvegarde la liste des processus
+```
 
-### Démarrage manuel
+Après reboot, tous les services redémarrent automatiquement.
+
+#### Commandes PM2 courantes
+
+| Commande | Action |
+|----------|--------|
+| `pm2 start ecosystem.config.js` | Démarrer via le fichier de config |
+| `pm2 stop all` | Arrêter tous les services |
+| `pm2 restart all` | Redémarrer tous les services |
+| `pm2 restart jarvis-backend` | Redémarrer un service spécifique |
+| `pm2 logs jarvis-backend` | Logs d'un service |
+| `pm2 delete all` | Supprimer les processus de PM2 |
+
+### Démarrage direct (session terminal)
+
+```bash
+source venv/bin/activate
+bash launch-JARVIS.sh     # Tous les serveurs, Ctrl+C pour arrêter
+```
+
+### Démarrage manuel (service par service)
 
 ```bash
 source venv/bin/activate
 
-# Backend
-python main.py --web          # Web sur :8501
-
-# Proxy mobile (dans un autre terminal)
-python webmobile.py           # Mobile sur :3001
-
-# Interface terminal (TUI)
-python main.py --tui
+python main.py --web          # Backend :8501
+python webmobile.py           # Mobile proxy :3001
+python tts/voxtral_server.py  # TTS Voxtral :8001 (si MISTRAL_API_KEY)
+python main.py --tui          # Interface terminal
 ```
 
 ---
@@ -239,7 +268,9 @@ Navigation clavier, sélection d'agent, chat en mode texte.
 
 ## TTS — Synthèse vocale (optionnel)
 
-JARVIS supporte le TTS via **Kokoro** (voix française de haute qualité).
+JARVIS supporte deux moteurs TTS, sélectionnables dans l'interface web (Settings → TTS Engine) :
+
+### Kokoro (port 8000) — voix française locale, gratuit
 
 Installation dans le dossier parent :
 
@@ -252,7 +283,31 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Le fichier `launch-JARVIS.sh` détecte automatiquement `../jarvis-voice/tts_server4.py` et le démarre.
+`launch-JARVIS.sh` détecte automatiquement `../jarvis-voice/tts_server4.py` et le démarre.  
+Voix disponible : `ff_siwis` (française féminine).
+
+### Voxtral (port 8001) — IA Mistral, qualité supérieure
+
+Voxtral est le moteur TTS de Mistral AI. Il nécessite une clé API Mistral.
+
+**Configuration :**
+```bash
+# Dans .env
+MISTRAL_API_KEY=votre-cle-mistral
+```
+
+`launch-JARVIS.sh` démarre automatiquement `tts/voxtral_server.py` si `MISTRAL_API_KEY` est configurée.
+
+Voix disponibles : `fr_female`, `fr_male`
+
+**Obtenir une clé Mistral :** https://console.mistral.ai/
+
+### Changer de moteur TTS
+
+Dans l'interface web (`http://localhost:8501`) :  
+**Settings → TTS Engine → Kokoro / Voxtral**
+
+L'interface mobile (`http://localhost:3001`) utilise le proxy `/tts` avec le paramètre `engine`.
 
 ---
 
@@ -288,7 +343,10 @@ python TESTS/test_stream.py
 | `ModuleNotFoundError: chromadb`   | `pip install chromadb`                                    |
 | `No API key` error                | Vérifiez que `JARVIS_DEFAULT_MODEL` commence par `ollama/` |
 | Tests d'import échouent           | `source venv/bin/activate` avant de lancer les tests      |
-| App mobile ne se connecte pas     | Vérifiez l'URL du serveur dans Settings (doit être l'IP de votre machine, pas localhost) |
+| App mobile ne se connecte pas     | Vérifiez l'URL du serveur dans Settings (IP de la machine, pas localhost) |
+| `pm2: command not found`          | `npm install -g pm2`                                      |
+| Service PM2 ne redémarre pas      | `pm2 logs <nom>` pour voir l'erreur, puis `pm2 restart <nom>` |
+| Voxtral TTS désactivé             | Ajoutez `MISTRAL_API_KEY=...` dans `.env` puis `pm2 restart jarvis-voxtral` |
 
 ---
 
