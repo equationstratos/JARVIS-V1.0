@@ -1,0 +1,28 @@
+les infos ttfb qui reste afficher avec le dernier chieffre apres reponse et pour infos c est quoi deja ?
+
+hhtps
+voxstral
+d autres couleurs d interfaces 
+
+/* Pour les polygones */
+stroke: var(--accent);
+fill: var(--accent-dim);
+
+/* Pour le texte */
+fill: var(--accent);
+
+REMETTRE LE MODE LIVE
+TOUT TESTER ....................
+clean repos plus dossier tests
+
+
+
+faire un fichier autostart all servers plus outil de surveillance
+
+page de presentation projet 
+
+read me propre setup install etc 
+
+une version windows..
+
+

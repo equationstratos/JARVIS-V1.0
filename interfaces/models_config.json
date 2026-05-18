@@ -1,0 +1,52 @@
+{
+  "api_keys": {
+    "ANTHROPIC_API_KEY": "",
+    "OPENAI_API_KEY": "",
+    "GOOGLE_API_KEY": "",
+    "MISTRAL_API_KEY": "",
+    "GROQ_API_KEY": "",
+    "PERPLEXITY_API_KEY": ""
+  },
+  "models": {
+    "Gemini (Google)": [
+      {"id": "gemini/gemini-2.0-flash", "name": "Gemini 2.0 Flash", "description": "Latest Gemini - fastest & most capable", "provider": "google", "contextWindow": 1000000, "maxTokens": 8000},
+      {"id": "gemini/gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash Lite", "description": "Lightweight, faster version", "provider": "google", "contextWindow": 100000, "maxTokens": 8000},
+      {"id": "gemini/gemini-1.5-pro", "name": "Gemini 1.5 Pro", "description": "Most capable Gemini model", "provider": "google", "contextWindow": 2000000, "maxTokens": 8000},
+      {"id": "gemini/gemini-1.5-flash", "name": "Gemini 1.5 Flash", "description": "Fast Gemini 1.5", "provider": "google", "contextWindow": 1000000, "maxTokens": 8000},
+      {"id": "gemini/gemini-1.0-pro", "name": "Gemini 1.0 Pro", "description": "Original Pro model", "provider": "google", "contextWindow": 30000, "maxTokens": 8000}
+    ],
+    "Mistral": [
+      {"id": "mistral/mistral-large-latest", "name": "Mistral Large (Latest)", "description": "Most powerful Mistral model", "provider": "mistral", "contextWindow": 32000, "maxTokens": 8000},
+      {"id": "mistral/mistral-medium-latest", "name": "Mistral Medium (Latest)", "description": "Balanced performance and speed", "provider": "mistral", "contextWindow": 32000, "maxTokens": 8000},
+      {"id": "mistral/mistral-small-latest", "name": "Mistral Small (Latest)", "description": "Fast and efficient", "provider": "mistral", "contextWindow": 32000, "maxTokens": 8000},
+      {"id": "mistral/mistral-7b-instruct-v0.2", "name": "Mistral 7B (v0.2)", "description": "7B instruction-tuned model", "provider": "mistral", "contextWindow": 8192, "maxTokens": 4096},
+      {"id": "mistral/mistral-nemo", "name": "Mistral Nemo", "description": "High-quality compact model", "provider": "mistral", "contextWindow": 128000, "maxTokens": 8000},
+      {"id": "mistral/mixtral-8x7b-instruct-v0.1", "name": "Mixtral 8x7B (v0.1)", "description": "Mixture of Experts - powerful", "provider": "mistral", "contextWindow": 32000, "maxTokens": 8000},
+      {"id": "mistral/mixtral-8x22b-instruct-v0.1", "name": "Mixtral 8x22B (v0.1)", "description": "Larger MoE model", "provider": "mistral", "contextWindow": 65536, "maxTokens": 8000}
+    ],
+    "Claude (Anthropic)": [
+      {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "description": "Latest Claude - excellent reasoning", "provider": "anthropic", "contextWindow": 200000, "maxTokens": 4096},
+      {"id": "claude-3-opus-20250219", "name": "Claude 3 Opus", "description": "Most capable Claude model", "provider": "anthropic", "contextWindow": 200000, "maxTokens": 4096},
+      {"id": "claude-3-sonnet-20240229", "name": "Claude 3 Sonnet", "description": "Balanced performance", "provider": "anthropic", "contextWindow": 200000, "maxTokens": 4096}
+    ],
+    "GPT (OpenAI)": [
+      {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "description": "Fast and capable", "provider": "openai", "contextWindow": 128000, "maxTokens": 4096},
+      {"id": "gpt-4o", "name": "GPT-4o", "description": "Optimized version", "provider": "openai", "contextWindow": 128000, "maxTokens": 4096},
+      {"id": "gpt-4", "name": "GPT-4", "description": "Classic GPT-4", "provider": "openai", "contextWindow": 8192, "maxTokens": 2048},
+      {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo", "description": "Fast and economical", "provider": "openai", "contextWindow": 4096, "maxTokens": 2048}
+    ],
+    "Local (Ollama)": [
+      {"id": "ollama/llama3", "name": "Llama 3", "description": "Meta's latest - recommended", "provider": "ollama", "contextWindow": 8192, "maxTokens": 4096},
+      {"id": "ollama/llama3.1", "name": "Llama 3.1", "description": "Improved version", "provider": "ollama", "contextWindow": 131072, "maxTokens": 8000},
+      {"id": "ollama/llama2", "name": "Llama 2", "description": "Previous generation", "provider": "ollama", "contextWindow": 4096, "maxTokens": 2048},
+      {"id": "ollama/mistral", "name": "Mistral (Local)", "description": "Mistral 7B local version", "provider": "ollama", "contextWindow": 32000, "maxTokens": 8000},
+      {"id": "ollama/neural-chat", "name": "Neural Chat", "description": "Intel's conversational model", "provider": "ollama", "contextWindow": 4096, "maxTokens": 2048},
+      {"id": "ollama/dolphin-mixtral", "name": "Dolphin Mixtral", "description": "High-quality MoE variant", "provider": "ollama", "contextWindow": 32000, "maxTokens": 4096},
+      {"id": "ollama/codellama", "name": "Code Llama", "description": "Specialized for code", "provider": "ollama", "contextWindow": 100000, "maxTokens": 4096}
+    ],
+    "Other Providers": [
+      {"id": "groq/mixtral-8x7b-32768", "name": "Groq Mixtral 8x7B", "description": "Super fast MoE", "provider": "groq", "contextWindow": 32768, "maxTokens": 4096},
+      {"id": "groq/llama2-70b-4096", "name": "Groq Llama 2 70B", "description": "Very fast inference", "provider": "groq", "contextWindow": 4096, "maxTokens": 2048}
+    ]
+  }
+}

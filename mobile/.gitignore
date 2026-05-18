@@ -1,0 +1,43 @@
+# Expo
+.expo/
+.expo-shared/
+dist/
+npm-debug.log
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Dependencies
+node_modules/
+.yarn/
+.yarn-integrity
+.pnp
+.pnp.js
+package-lock.json
+yarn.lock
+
+# Testing
+coverage/
+.nyc_output/
+junit.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Temporary files
+*.tmp
+*.bak

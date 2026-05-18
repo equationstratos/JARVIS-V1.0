@@ -1,0 +1,135 @@
+INFO:     Started server process [113829]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+WARNING:  Invalid HTTP request received.
+Chargement du moteur vocal Kokoro v1.0 (Français)...
+Moteur vocal prêt ! Langue cible : Français (fr-fr)
+INFO:     82.225.219.196:41550 - "OPTIONS /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41550 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:37841 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 415, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 56, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/responses.py", line 366, in __call__
+    await self._handle_simple(send, send_header_only, send_pathsend)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/responses.py", line 397, in _handle_simple
+    await send({"type": "http.response.body", "body": chunk, "more_body": more_body})
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 39, in sender
+    await send(message)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 39, in sender
+    await send(message)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 158, in send
+    await send(message)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 161, in _send
+    await send(message)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 513, in send
+    output = self.conn.send(event=h11.EndOfMessage())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/h11/_connection.py", line 538, in send
+    data_list = self.send_with_data_passthrough(event)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/h11/_connection.py", line 571, in send_with_data_passthrough
+    writer(event, data_list.append)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/h11/_writers.py", line 67, in __call__
+    self.send_eom(event.headers, write)
+  File "/home/ubuntu/jarvis-voice/venv/lib/python3.12/site-packages/h11/_writers.py", line 96, in send_eom
+    raise LocalProtocolError("Too little data for declared Content-Length")
+h11._util.LocalProtocolError: Too little data for declared Content-Length
+INFO:     82.225.219.196:40709 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:37120 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:46497 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:35930 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:35930 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:48193 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:48193 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:48193 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:48193 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:48193 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "OPTIONS /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:44348 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36602 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36602 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36602 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36602 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36602 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:35234 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:38648 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:38648 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:38648 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:33374 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:33374 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:43352 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:43352 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:43352 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:43352 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     172.105.7.159:41254 - "GET /.bash_history HTTP/1.1" 404 Not Found
+INFO:     172.105.7.159:41260 - "GET /.claude/history.jsonl HTTP/1.1" 404 Not Found
+INFO:     172.105.7.159:41268 - "GET /.env HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     45.79.181.251:33814 - "GET / HTTP/1.1" 404 Not Found
+INFO:     82.225.219.196:45473 - "OPTIONS /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:45473 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41985 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41985 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41985 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36808 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36808 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:36808 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:47800 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41524 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41524 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     82.225.219.196:41524 - "POST /v1/audio/speech HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [113829]

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
+    <title>JARVIS Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Text:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --md-surface: #121212;
+            --md-surface-1: #1f1f1f;
+            --md-surface-2: #2a2a2a;
+            --md-surface-3: #353535;
+            --md-on-surface: #e6e1e5;
+            --md-on-surface-variant: #c9c5d0;
+            --md-on-surface-dim: #938f99;
+            --md-outline: #49454f;
+            --md-primary: #a8c7fa;
+            --md-primary-container: #0842a0;
+            --md-on-primary: #062e6f;
+            --md-on-primary-container: #d3e3fd;
+            --md-secondary: #c2e7ff;
+            --md-tertiary: #ffb4ab;
+            --md-error: #f2b8b5;
+            --md-success: #7dd58f;
+            --md-warning: #ffb74d;
+            --nav-height: 80px;
+            --header-height: 64px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Google Sans Text', 'Roboto', sans-serif;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior: none;
+        }
+
+        .app {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HEADER ─── */
+        .top-bar {
+            position: relative;
+            height: calc(var(--header-height) + var(--safe-top));
+            padding-top: var(--safe-top);
+            background: var(--md-surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-left: 20px;
+            padding-right: 20px;
+            z-index: 100;
+            border-bottom: 1px solid var(--md-outline);
+        }
+
+        .top-bar-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--md-on-surface);
+            letter-spacing: 0;
+        }
+
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--md-surface-2);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--md-on-surface-dim);
+        }
+        .status-icon.online { background: var(--md-success); }
+        .status-icon.offline { background: var(--md-error); }
+
+        /* ─── CONTENT ─── */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: var(--md-surface);
+        }
+
+        .page {
+            display: none;
+            min-height: 100%;
+        }
+        .page.active { display: block; }
+
+        /* ─── CARDS ─── */
+        .card {
+            background: var(--md-surface-1);
+            border-radius: 16px;
+            margin: 12px 16px;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-on-surface-variant);
+            padding: 16px 20px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* ─── CHAT ─── */
+        .chat-page { padding-bottom: 80px; }
+
+        .messages {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .empty-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+            min-height: 50vh;
+        }
+
+        .empty-hero-icon {
+            width: 96px;
+            height: 96px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--md-primary-container), var(--md-primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(168, 199, 250, 0.15);
+        }
+
+        .empty-hero-title {
+            font-size: 28px;
+            font-weight: 400;
+            color: var(--md-on-surface);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .empty-hero-sub {
+            font-size: 15px;
+            color: var(--md-on-surface-variant);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: slideIn 0.35s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--md-surface-2);
+            color: var(--md-on-surface);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.thinking {
+            display: flex;
+            gap: 6px;
+            padding: 18px;
+        }
+
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--md-on-surface-dim);
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+        .thinking-dot:nth-child(2) { animation-delay: 0.15s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: scale(0.7); opacity: 0.4; }
+            30% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ─── INPUT ─── */
+        .input-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(var(--nav-height) + var(--safe-bottom));
+            padding: 12px 16px;
+            background: var(--md-surface);
+            border-top: 1px solid var(--md-outline);
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            z-index: 50;
+        }
+
+        .input-container {
+            flex: 1;
+            background: var(--md-surface-2);
+            border-radius: 28px;
+            padding: 6px 8px 6px 20px;
+            display: flex;
+            align-items: flex-end;
+            min-height: 48px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: var(--md-primary);
+        }
+
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--md-on-surface);
+            font-size: 16px;
+            font-family: inherit;
+            padding: 11px 0;
+            max-height: 120px;
+            resize: none;
+        }
+
+        .input-field::placeholder { color: var(--md-on-surface-dim); }
+
+        .fab-send {
+            min-width: 48px;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 2px 8px rgba(168, 199, 250, 0.2);
+        }
+
+        .fab-send:disabled {
+            background: var(--md-surface-3);
+            color: var(--md-on-surface-dim);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .fab-send:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        /* ─── LIST ITEMS ─── */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            min-height: 64px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.15s;
+            gap: 12px;
+        }
+
+        .list-item:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .list-item-leading {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--md-surface-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .list-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .list-item-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--md-on-surface);
+            margin-bottom: 2px;
+        }
+
+        .list-item-subtitle {
+            font-size: 13px;
+            color: var(--md-on-surface-variant);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-item-trailing {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .list-item.selected {
+            background: rgba(168, 199, 250, 0.08);
+        }
+
+        .list-item.selected .list-item-leading {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+        }
+
+        .list-item.selected .list-item-title {
+            color: var(--md-primary);
+        }
+
+        .list-item.selected .list-item-trailing::after {
+            content: '✓';
+            color: var(--md-primary);
+            font-weight: 700;
+        }
+
+        /* ─── INPUTS ─── */
+        .text-field {
+            margin: 12px 20px;
+            position: relative;
+        }
+
+        .text-field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-on-surface-variant);
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+
+        .text-field-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .text-field-input {
+            flex: 1;
+            background: var(--md-surface-2);
+            border: 1px solid var(--md-outline);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--md-on-surface);
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            min-height: 52px;
+        }
+
+        .text-field-input:focus {
+            border-color: var(--md-primary);
+        }
+
+        .text-field-input::placeholder { color: var(--md-on-surface-dim); }
+
+        .icon-btn {
+            min-width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--md-surface-2);
+            border: 1px solid var(--md-outline);
+            color: var(--md-on-surface);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ─── BUTTONS ─── */
+        .btn-filled {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: calc(100% - 32px);
+            margin: 16px;
+            padding: 16px;
+            min-height: 56px;
+            border: none;
+            border-radius: 28px;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            font-size: 15px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .btn-filled:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .btn-tonal {
+            background: var(--md-surface-2);
+            color: var(--md-primary);
+        }
+
+        .btn-error {
+            background: var(--md-error);
+            color: #601410;
+        }
+
+        /* ─── BOTTOM NAVIGATION ─── */
+        .bottom-nav {
+            position: relative;
+            height: calc(var(--nav-height) + var(--safe-bottom));
+            padding-bottom: var(--safe-bottom);
+            background: var(--md-surface-1);
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            padding-top: 8px;
+            z-index: 100;
+            border-top: 1px solid var(--md-outline);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 16px;
+            cursor: pointer;
+            color: var(--md-on-surface-variant);
+            min-width: 72px;
+            min-height: 64px;
+            position: relative;
+        }
+
+        .nav-item-icon-wrap {
+            width: 64px;
+            height: 32px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: background 0.2s;
+        }
+
+        .nav-item.active .nav-item-icon-wrap {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+        }
+
+        .nav-item-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-on-surface-variant);
+        }
+
+        .nav-item.active .nav-item-label {
+            color: var(--md-on-surface);
+            font-weight: 700;
+        }
+
+        /* ─── TOAST ─── */
+        .snackbar {
+            position: fixed;
+            bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+            left: 16px;
+            right: 16px;
+            background: var(--md-surface-3);
+            color: var(--md-on-surface);
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 1000;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .snackbar.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ─── SWITCH ─── */
+        .switch {
+            position: relative;
+            width: 52px;
+            height: 32px;
+            background: var(--md-surface-3);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 2px solid var(--md-outline);
+            flex-shrink: 0;
+        }
+
+        .switch.on {
+            background: var(--md-primary);
+            border-color: var(--md-primary);
+        }
+
+        .switch-thumb {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 16px;
+            height: 16px;
+            background: var(--md-on-surface-variant);
+            border-radius: 50%;
+            transition: transform 0.2s, width 0.2s, height 0.2s, background 0.2s;
+        }
+
+        .switch.on .switch-thumb {
+            width: 22px;
+            height: 22px;
+            top: 1px;
+            transform: translateX(22px);
+            background: var(--md-on-primary);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--md-on-surface-dim);
+            padding: 0 24px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="top-bar-title" id="pageTitle">JARVIS</div>
+            <div class="status-chip">
+                <span class="status-icon offline" id="statusIcon"></span>
+                <span id="statusText">Hors ligne</span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- Chat -->
+            <div class="page active chat-page" id="chatPage">
+                <div class="messages" id="messages">
+                    <div class="empty-hero">
+                        <div class="empty-hero-icon">✨</div>
+                        <div class="empty-hero-title">Salut, je suis JARVIS</div>
+                        <div class="empty-hero-sub">Comment puis-je t'aider aujourd'hui ?</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Models -->
+            <div class="page" id="modelsPage">
+                <div class="text-field">
+                    <div class="text-field-label">URL DU SERVEUR</div>
+                    <div class="text-field-input-wrap">
+                        <input type="text" class="text-field-input" id="backendUrl" placeholder="http://127.0.0.1:3001" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Modèle actif</div>
+                    <div class="list-item">
+                        <div class="list-item-leading">🎯</div>
+                        <div class="list-item-content">
+                            <div class="list-item-title" id="currentModel">Aucun</div>
+                            <div class="list-item-subtitle">Sélectionne un modèle</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modelCategories"></div>
+                <div style="height: 100px"></div>
+            </div>
+
+            <!-- Settings -->
+            <div class="page" id="settingsPage">
+                <div class="card">
+                    <div class="card-title">Clés API</div>
+                    <div id="apiKeysList"></div>
+                </div>
+                <div class="hint">💾 Les clés sont sauvegardées localement et envoyées au serveur</div>
+                <button class="btn-filled" onclick="saveApiKeys()">
+                    <span>💾</span><span>Sauvegarder les clés</span>
+                </button>
+
+                <div class="card">
+                    <div class="card-title">Préférences</div>
+                    <div class="list-item">
+                        <div class="list-item-leading">⚡</div>
+                        <div class="list-item-content">
+                            <div class="list-item-title">Streaming live</div>
+                            <div class="list-item-subtitle">Réponses en temps réel</div>
+                        </div>
+                        <div class="switch on" id="streamToggle" onclick="toggleStream()">
+                            <div class="switch-thumb"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-filled btn-tonal" onclick="clearChat()">
+                    <span>🗑️</span><span>Effacer la conversation</span>
+                </button>
+                <button class="btn-filled btn-error" onclick="resetAll()">
+                    <span>⚠️</span><span>Tout réinitialiser</span>
+                </button>
+                <div style="height: 100px"></div>
+            </div>
+        </div>
+
+        <!-- INPUT -->
+        <div class="input-bar" id="inputBar">
+            <div class="input-container">
+                <textarea class="input-field" id="messageInput" placeholder="Écris ton message..." rows="1"></textarea>
+            </div>
+            <button class="fab-send" id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
+                <div class="nav-item-icon-wrap">💬</div>
+                <div class="nav-item-label">Chat</div>
+            </div>
+            <div class="nav-item" data-page="models" onclick="switchPage('models')">
+                <div class="nav-item-icon-wrap">🧠</div>
+                <div class="nav-item-label">Modèles</div>
+            </div>
+            <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+                <div class="nav-item-icon-wrap">⚙️</div>
+                <div class="nav-item-label">Réglages</div>
+            </div>
+        </nav>
+
+        <div class="snackbar" id="snackbar"></div>
+    </div>
+
+    <script>
+        const State = {
+            backend: localStorage.getItem('jarvis_backend') || 'http://127.0.0.1:3001',
+            model: localStorage.getItem('jarvis_model') || '',
+            messages: JSON.parse(localStorage.getItem('jarvis_messages') || '[]'),
+            apiKeys: JSON.parse(localStorage.getItem('jarvis_api_keys') || '{}'),
+            stream: localStorage.getItem('jarvis_stream') !== 'false',
+        };
+
+        const API_KEY_NAMES = [
+            { key: 'ANTHROPIC_API_KEY', label: 'Anthropic Claude', icon: '🤖' },
+            { key: 'OPENAI_API_KEY', label: 'OpenAI GPT', icon: '🧠' },
+            { key: 'GOOGLE_API_KEY', label: 'Google Gemini', icon: '✨' },
+            { key: 'MISTRAL_API_KEY', label: 'Mistral AI', icon: '🌬️' },
+            { key: 'GROQ_API_KEY', label: 'Groq', icon: '⚡' },
+            { key: 'PERPLEXITY_API_KEY', label: 'Perplexity', icon: '🔍' },
+        ];
+
+        const $ = id => document.getElementById(id);
+        const pages = { chat: $('chatPage'), models: $('modelsPage'), settings: $('settingsPage') };
+
+        function init() {
+            $('backendUrl').value = State.backend;
+            renderApiKeys();
+            renderMessages();
+            updateCurrentModel();
+            checkHealth();
+            loadModels();
+            setupInput();
+            $('backendUrl').addEventListener('change', e => {
+                State.backend = e.target.value.trim() || 'http://127.0.0.1:3001';
+                localStorage.setItem('jarvis_backend', State.backend);
+                checkHealth();
+                loadModels();
+            });
+            setInterval(checkHealth, 15000);
+        }
+
+        function switchPage(name) {
+            Object.entries(pages).forEach(([k, el]) => el.classList.toggle('active', k === name));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === name));
+            $('pageTitle').textContent = name === 'chat' ? 'JARVIS' : name === 'models' ? 'Modèles' : 'Réglages';
+            $('inputBar').style.display = name === 'chat' ? 'flex' : 'none';
+        }
+
+        async function checkHealth() {
+            try {
+                const r = await fetch(`${State.backend}/health`, { signal: AbortSignal.timeout(5000) });
+                if (r.ok) {
+                    $('statusIcon').className = 'status-icon online';
+                    $('statusText').textContent = 'Connecté';
+                    return;
+                }
+            } catch {}
+            $('statusIcon').className = 'status-icon offline';
+            $('statusText').textContent = 'Hors ligne';
+        }
+
+        async function loadModels() {
+            try {
+                const r = await fetch(`${State.backend}/models`, { signal: AbortSignal.timeout(5000) });
+                if (!r.ok) return;
+                renderModels(await r.json());
+            } catch {
+                $('modelCategories').innerHTML = '<div class="hint">⚠️ Impossible de charger les modèles. Vérifie l\'URL du serveur.</div>';
+            }
+        }
+
+        function renderModels(data) {
+            const container = $('modelCategories');
+            container.innerHTML = '';
+            Object.entries(data).forEach(([cat, models]) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<div class="card-title">${cat}</div>`;
+                models.forEach(m => {
+                    const item = document.createElement('div');
+                    item.className = 'list-item' + (m.id === State.model ? ' selected' : '');
+                    item.innerHTML = `
+                        <div class="list-item-leading">${getModelIcon(m.provider)}</div>
+                        <div class="list-item-content">
+                            <div class="list-item-title">${m.name}</div>
+                            <div class="list-item-subtitle">${m.description || m.id}</div>
+                        </div>
+                        <div class="list-item-trailing"></div>
+                    `;
+                    item.onclick = () => selectModel(m.id, m.name, item);
+                    card.appendChild(item);
+                });
+                container.appendChild(card);
+            });
+        }
+
+        function getModelIcon(provider) {
+            const icons = { anthropic: '🤖', openai: '🧠', google: '✨', mistral: '🌬️', ollama: '🦙', groq: '⚡' };
+            return icons[provider] || '🎯';
+        }
+
+        function selectModel(id, name, item) {
+            State.model = id;
+            localStorage.setItem('jarvis_model', id);
+            document.querySelectorAll('#modelCategories .list-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            updateCurrentModel();
+            showSnackbar(`✓ ${name}`);
+        }
+
+        function updateCurrentModel() {
+            $('currentModel').textContent = State.model || 'Aucun sélectionné';
+        }
+
+        function renderApiKeys() {
+            const list = $('apiKeysList');
+            list.innerHTML = '';
+            API_KEY_NAMES.forEach(({ key, label, icon }) => {
+                const value = State.apiKeys[key] || '';
+                const masked = value && value.length > 8 ? value.slice(0, 4) + '••••' + value.slice(-4) : '';
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.style.flexDirection = 'column';
+                item.style.alignItems = 'stretch';
+                item.style.gap = '8px';
+                item.style.cursor = 'default';
+                item.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                        <div class="list-item-leading">${icon}</div>
+                        <div class="list-item-content">
+                            <div class="list-item-title">${label}</div>
+                            <div class="list-item-subtitle">${value ? 'Configurée' : 'Non configurée'}</div>
+                        </div>
+                    </div>
+                    <div class="text-field-input-wrap" style="margin-left: 52px;">
+                        <input type="password" class="text-field-input" data-key="${key}" placeholder="${masked || 'Entrer la clé...'}" value="${value}">
+                        <button class="icon-btn" onclick="toggleKeyView(this)">👁️</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function toggleKeyView(btn) {
+            const input = btn.previousElementSibling;
+            if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+            else { input.type = 'password'; btn.textContent = '👁️'; }
+        }
+
+        async function saveApiKeys() {
+            const inputs = document.querySelectorAll('[data-key]');
+            const updates = {};
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val) {
+                    State.apiKeys[input.dataset.key] = val;
+                    updates[input.dataset.key] = val;
+                }
+            });
+            localStorage.setItem('jarvis_api_keys', JSON.stringify(State.apiKeys));
+            try {
+                const r = await fetch(`${State.backend}/api-keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                });
+                showSnackbar(r.ok ? '✓ Clés sauvegardées sur le serveur' : '✓ Sauvegardé localement');
+            } catch {
+                showSnackbar('✓ Sauvegardé localement');
+            }
+        }
+
+        function renderMessages() {
+            const container = $('messages');
+            if (State.messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-hero">
+                        <div class="empty-hero-icon">✨</div>
+                        <div class="empty-hero-title">Salut, je suis JARVIS</div>
+                        <div class="empty-hero-sub">Comment puis-je t'aider aujourd'hui ?</div>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = '';
+            State.messages.forEach(m => addMessage(m.role, m.text, false));
+        }
+
+        function addMessage(role, text, save = true) {
+            const container = $('messages');
+            if (State.messages.length === 0 || container.querySelector('.empty-hero')) container.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = text;
+            container.appendChild(div);
+            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+            if (save) {
+                State.messages.push({ role, text });
+                localStorage.setItem('jarvis_messages', JSON.stringify(State.messages));
+            }
+            return div;
+        }
+
+        function showThinking() {
+            const div = document.createElement('div');
+            div.className = 'message assistant thinking';
+            div.id = 'thinking';
+            div.innerHTML = '<div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>';
+            $('messages').appendChild(div);
+            $('messages').parentElement.scrollTop = 999999;
+        }
+
+        function removeThinking() {
+            const el = $('thinking');
+            if (el) el.remove();
+        }
+
+        function setupInput() {
+            const input = $('messageInput');
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+                $('sendBtn').disabled = !input.value.trim();
+            });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        async function sendMessage() {
+            const input = $('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            if (!State.model) {
+                showSnackbar('⚠️ Sélectionne d\'abord un modèle');
+                switchPage('models');
+                return;
+            }
+            input.value = '';
+            input.style.height = 'auto';
+            $('sendBtn').disabled = true;
+            addMessage('user', text);
+            showThinking();
+
+            const form = new FormData();
+            form.append('query', text);
+            form.append('model', State.model);
+
+            try {
+                if (State.stream) await streamResponse(form);
+                else {
+                    const r = await fetch(`${State.backend}/chat`, { method: 'POST', body: form });
+                    removeThinking();
+                    const data = await r.json();
+                    addMessage('assistant', data.response || data.error || 'Pas de réponse');
+                }
+            } catch (e) {
+                removeThinking();
+                addMessage('assistant', '❌ ' + e.message);
+            }
+        }
+
+        async function streamResponse(form) {
+            const r = await fetch(`${State.backend}/chat/stream`, { method: 'POST', body: form });
+            removeThinking();
+            const reader = r.body.getReader();
+            const decoder = new TextDecoder();
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            $('messages').appendChild(div);
+            let buffer = '', full = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.type === 'token') {
+                                full += data.data;
+                                div.textContent = full;
+                                $('messages').parentElement.scrollTop = 999999;
+                            } else if (data.type === 'done') {
+                                full = data.data || full;
+                                div.textContent = full;
+                            }
+                        } catch {}
+                    }
+                }
+            }
+            State.messages.push({ role: 'assistant', text: full });
+            localStorage.setItem('jarvis_messages', JSON.stringify(State.messages));
+        }
+
+        function toggleStream() {
+            State.stream = !State.stream;
+            $('streamToggle').classList.toggle('on', State.stream);
+            localStorage.setItem('jarvis_stream', State.stream);
+        }
+
+        function clearChat() {
+            if (!confirm('Effacer toute la conversation ?')) return;
+            State.messages = [];
+            localStorage.removeItem('jarvis_messages');
+            renderMessages();
+            showSnackbar('✓ Conversation effacée');
+        }
+
+        function resetAll() {
+            if (!confirm('Réinitialiser TOUS les paramètres ?')) return;
+            localStorage.clear();
+            location.reload();
+        }
+
+        let snackTimer;
+        function showSnackbar(msg) {
+            clearTimeout(snackTimer);
+            const s = $('snackbar');
+            s.textContent = msg;
+            s.classList.add('show');
+            snackTimer = setTimeout(() => s.classList.remove('show'), 2500);
+        }
+
+        init();
+    </script>
+</body>
+</html>

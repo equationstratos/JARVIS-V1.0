@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS — Neural Interface v16</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        /* FIX : Affichage du menu */
+        .menu-overlay.show { display: flex !important; }
+
+        /* Animations de chargement des Personnalités */
+        .neural-loader { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .neural-loader.circle-trace { background: #02040a; }
+        .neural-loader.circle-trace::after { content: ''; width: 100px; height: 100px; border: 4px solid var(--accent); border-radius: 50%; animation: pulseCircle 1s infinite; }
+        .neural-loader.matrix-rain { background: #000; color: #00ff00; font-family: monospace; font-size: 2rem; }
+        .neural-loader.matrix-rain::after { content: '10110101'; animation: glitch 0.1s infinite; }
+        .neural-loader.thermal-scan { background: rgba(0,0,0,0.8); }
+        .neural-loader.thermal-scan::after { content: ''; position: absolute; top:0; left:0; right:0; height:10px; background:#a2ff00; box-shadow:0 0 20px #a2ff00; animation: scan 1s infinite; }
+
+        @keyframes pulseCircle { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
+        @keyframes scan { from { top: -10%; } to { top: 110%; } }
+        @keyframes glitch { 0% { content: '10110'; } 50% { content: '01001'; } 100% { content: '11101'; } }
+    </style>
+</head>
+<body>
+
+<div id="toast">COPIÉ</div>
+
+<div class="menu-overlay" id="menu-overlay">
+    <div class="menu-window">
+        <div class="menu-header">
+            <div>
+                <div class="menu-title" id="menu-title">⚙️ PARAMÈTRES</div>
+                <div class="menu-meta" id="menu-meta"></div>
+            </div>
+            <button class="menu-close-btn" onclick="closeMenu()">✕</button>
+        </div>
+        <div class="menu-body" id="menu-body"></div>
+        <div class="menu-footer">
+            <span id="menu-footer-info">💾 Sauvegarde auto</span>
+            <button class="menu-btn primary" onclick="closeMenu()">FERMER</button>
+        </div>
+    </div>
+</div>
+
+<div id="sidebar">
+    <div class="logo-area">
+        <div class="logo-title">
+            <div class="hex-logo">
+                <svg viewBox="0 0 40 46"><polygon points="20,2 38,12 38,34 20,44 2,34 2,12" stroke="var(--accent)" fill="none"/></svg>
+            </div> JARVIS
+        </div>
+        <div class="logo-sub">NEURAL INTERFACE v16</div>
+    </div>
+
+    <div class="status-row">
+        <div class="status-dot"></div> <div class="status-text">SYSTÈME EN LIGNE</div>
+        <div id="sidebar-toggle" class="sidebar-toggle"><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="sb-content" style="flex:1; overflow-y:auto; padding:10px;">
+        <div class="sb-section">
+            <div class="sb-label">MODÈLES</div>
+            <select class="cyber-select" id="model-select">
+                <option value="gemini/gemini-2.0-flash">Gemini 2.0 Flash</option>
+            </select>
+        </div>
+
+        <div class="sb-section">
+            <div class="sb-label">RACCOURCIS</div>
+            <div class="toggle-row"><span>⚡ Streaming</span><label class="toggle"><input type="checkbox" id="stream-toggle" checked><span></span></label></div>
+            <div class="toggle-row"><span>🔊 Vocal</span><label class="toggle"><input type="checkbox" id="tts-toggle"><span></span></label></div>
+            <div class="toggle-row"><span>📊 3D Viz</span><label class="toggle"><input type="checkbox" id="viz-toggle"><span></span></label></div>
+        </div>
+
+        <div id="viz-container" style="display:none; height:150px; margin-top:10px;">
+            <canvas id="viz-canvas"></canvas>
+        </div>
+    </div>
+
+    <div class="sb-bottom">
+        <button class="sb-btn" onclick="clearChat()">🗑 PURGE</button>
+    </div>
+</div>
+
+<div id="main">
+    <div id="topbar">
+        <div class="topbar-left">
+            <div class="breadcrumb">JARVIS / <span>CONSOLE</span></div>
+            <div class="topbar-menu">
+                <span class="menu-link" onclick="openMenu('infos')">📊 INFOS</span>
+                <span class="menu-link" onclick="openMenu('settings')">⚙️ PARAMÈTRES</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="chat-window">
+        <div class="welcome" id="welcome-screen">
+            <h2>BIENVENUE, STRATOS</h2>
+            <p>Interface neurale synchronisée.</p>
+        </div>
+        <div id="thinking" style="display:none;">CONNEXION...</div>
+    </div>
+
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Entrez une commande...">
+        <button class="send-btn" id="send-btn">ENVOYER</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const SETTINGS_KEY = 'jarvis_v16_settings';
+
+const DEFAULT_SETTINGS = {
+    visual: { accentColor:'cyan', bgColor:'black', uiColor:'stealth', vizStyle:'sphere', vizEnabled:false },
+    chat: { streaming: true },
+    vocal: { ttsEnabled: false }
+};
+
+const ACCENT_COLORS = {
+    cyan: { main:'#00c8ff', dim:'rgba(0,200,255,0.1)', glow:'0 0 20px rgba(0,200,255,0.4)' },
+    red: { main:'#ff4466', dim:'rgba(255,68,102,0.1)', glow:'0 0 20px rgba(255,68,102,0.4)' },
+    toxic_lime: { main:'#a2ff00', dim:'rgba(162,255,0,0.1)', glow:'0 0 20px #a2ff00' },
+    ice_fusion: { main:'#00fff2', dim:'rgba(0,255,242,0.1)', glow:'0 0 20px #00fff2' }
+};
+
+const THEME_PRESETS = {
+    tron: { label:'TRON', accent:'ice_fusion', bg:'void_blue', ui:'cobalt', anim:'circle-trace' },
+    ultron: { label:'ULTRON', accent:'red', bg:'black', ui:'titanium', anim:'circle-trace' },
+    matrix: { label:'MATRIX', accent:'green', bg:'black', ui:'stealth', anim:'matrix-rain' },
+    predator: { label:'PREDATOR', accent:'toxic_lime', bg:'deep_forest', ui:'emerald_ui', anim:'thermal-scan' }
+};
+
+let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || DEFAULT_SETTINGS;
+
+const dom = {
+    overlay: document.getElementById('menu-overlay'),
+    menuBody: document.getElementById('menu-body'),
+    vizToggle: document.getElementById('viz-toggle'),
+    vizContainer: document.getElementById('viz-container')
+};
+
+function applySettings() {
+    const root = document.documentElement;
+    const c = ACCENT_COLORS[settings.visual.accentColor] || ACCENT_COLORS.cyan;
+    root.style.setProperty('--accent', c.main);
+    root.style.setProperty('--glow-c', c.glow);
+    document.body.style.backgroundColor = settings.visual.bgColor === 'black' ? '#000' : '#02040a';
+}
+
+function openMenu(name) {
+    if (name === 'settings') renderSettings();
+    dom.overlay.classList.add('show');
+}
+
+function closeMenu() { dom.overlay.classList.remove('show'); }
+
+function renderSettings() {
+    let html = `<h3>PERSONNALITÉS</h3><div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">`;
+    for (const [id, p] of Object.entries(THEME_PRESETS)) {
+        html += `<button class="sb-btn" onclick="loadPreset('${id}')">${p.label}</button>`;
+    }
+    html += `</div>`;
+    dom.menuBody.innerHTML = html;
+}
+
+function loadPreset(id) {
+    const p = THEME_PRESETS[id];
+    const loader = document.createElement('div');
+    loader.className = `neural-loader ${p.anim}`;
+    document.body.appendChild(loader);
+
+    setTimeout(() => {
+        settings.visual.accentColor = p.accent;
+        applySettings();
+        saveSettings();
+        closeMenu();
+    }, 800);
+
+    setTimeout(() => loader.remove(), 1500);
+}
+
+function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+// --- 3D LOGIC ---
+let scene, camera, renderer, mesh;
+function init3D() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('viz-canvas'), alpha: true });
+    renderer.setSize(150, 150);
+    const geo = new THREE.IcosahedronGeometry(2, 1);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00c8ff, wireframe: true });
+    mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+    camera.position.z = 5;
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (mesh) { mesh.rotation.y += 0.01; mesh.rotation.x += 0.005; }
+    renderer.render(scene, camera);
+}
+
+dom.vizToggle.addEventListener('change', (e) => {
+    dom.vizContainer.style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !scene) init3D();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    applySettings();
+    document.getElementById('sidebar-toggle').onclick = () => document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+</script>
+</body>
+</html>

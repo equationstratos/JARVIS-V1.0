@@ -1,0 +1,2538 @@
+<!DOCTYPE html>
+<!-- saved from url=(0078)file:///home/stratos/Bureau/JARVIS%20%E2%80%94%20Neural%20Interface%20v14.html -->
+<html lang="fr" style="--accent: #ffaa00; --accent-dim: rgba(255,170,0,0.1); --glow-c: 0 0 20px rgba(255,170,0,0.4); --border-hi: rgba(255,170,0,0.5); --border: rgba(255,170,0,0.15); --ui-main-color: #1b2d2a !important; --sidebar-bg: #1b2d2a !important; --card-bg: #2d1b33 !important; --chat-bg: #2d1b33 !important; --panel-bg: #2d1b33 !important; --main-bg: #2d1b33 !important; --topbar-bg: #1b2d2a !important; --input-area-bg: #1b2d2a !important;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS — Neural Interface v16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./JARVIS — Neural Interface v16_files/css2" rel="stylesheet">
+<script defer="" src="./JARVIS — Neural Interface v16_files/marked.min.js"></script>
+<link rel="stylesheet" href="css/style.css">
+
+
+<script src="./JARVIS — Neural Interface v16_files/three.min.js"></script>
+<script src="./JARVIS — Neural Interface v16_files/three(1).min.js"></script></head>
+<body class="" style="background-color: rgb(0, 0, 0) !important; background-image: none !important;">
+<div id="toast">COPIÉ</div>
+<div class="menu-overlay" id="menu-overlay">
+    <div class="menu-window">
+        <div class="menu-header">
+            <div>
+                <div class="menu-title" id="menu-title">⚙️ PARAMÈTRES</div>
+                <div class="menu-meta" id="menu-meta"></div>
+            </div>
+            <button class="menu-close-btn" onclick="closeMenu()" title="Fermer (Échap)">✕</button>
+        </div>
+
+        <div class="menu-body" id="menu-body">
+            <div class="settings-layout">
+                <!-- Onglets -->
+                <div class="settings-tabs">
+                    <div class="settings-tab" data-tab="chat" onclick="switchSettingsTab('chat')">💬 CHAT</div>
+                    <div class="settings-tab" data-tab="vocal" onclick="switchSettingsTab('vocal')">🎤 VOCAL</div>
+                    <div class="settings-tab active" data-tab="visual" onclick="switchSettingsTab('visual')">🎨 VISUEL</div>
+                    <div class="settings-tab" data-tab="agents" onclick="switchSettingsTab('agents')">🤖 AGENTS</div>
+                    <div class="settings-tab" data-tab="advanced" onclick="switchSettingsTab('advanced')">⚡ AVANCÉ</div>
+                </div>
+
+                <div class="settings-pane" id="settings-pane">
+                    <h3>APPARENCE</h3>
+
+                    <!-- Couleur d'accent -->
+                    <div class="setting-card">
+                        <label class="s-label">COULEUR D'ACCENT</label>
+                        <div class="color-swatches">
+                            <div class="color-swatch" style="background:#00c8ff;" onclick="updateSetting('visual.accentColor','cyan'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch active" style="background:#ffaa00;" onclick="updateSetting('visual.accentColor','amber'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#00ff88;" onclick="updateSetting('visual.accentColor','green'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#c87aff;" onclick="updateSetting('visual.accentColor','purple'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#ff4466;" onclick="updateSetting('visual.accentColor','red'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                                                        <div class="color-swatch" style="background:#00c8ff;" onclick="updateSetting('visual.accentColor','cyan2'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch active" style="background:#ffaa00;" onclick="updateSetting('visual.accentColor','amber2'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#00ff88;" onclick="updateSetting('visual.accentColor','green2'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#c87aff;" onclick="updateSetting('visual.accentColor','purple'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#ff4466;" onclick="updateSetting('visual.accentColor','red'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>
+                        </div>
+                    </div>
+
+                    <!-- Couleur de Fond (CORRIGÉ) -->
+                    <div class="setting-card" id="bg-color-final">
+                        <label class="s-label">COULEUR DE FOND</label>
+                        <div class="color-swatches">
+                            <div class="color-swatch" style="background: rgb(10, 10, 12);" onclick="updateSetting('visual.bgColor','dark'); applySettings(); renderSettings();"></div>
+                            <div class="color-swatch" style="background: rgb(26, 26, 46);" onclick="updateSetting('visual.bgColor','navy'); applySettings(); renderSettings();"></div>
+                            <div class="color-swatch" style="background: rgb(22, 33, 62);" onclick="updateSetting('visual.bgColor','deep'); applySettings(); renderSettings();"></div>
+                            <div class="color-swatch" style="background: rgb(26, 26, 26);" onclick="updateSetting('visual.bgColor','gray'); applySettings(); renderSettings();"></div>
+                            <div class="color-swatch active" style="background: rgb(0, 0, 0);" onclick="updateSetting('visual.bgColor','black'); applySettings(); renderSettings();"></div>
+                            <div class="color-swatch" style="background:#1a1a1a;" 
+onclick="updateSetting('visual.uiColor','titanium'); applySettings(); renderSettings();" title="Titanium"></div>
+            <div class="color-swatch" style="background:#10141f;" onclick="updateSetting('visual.uiColor','cobalt'); applySettings(); renderSettings();" title="Cobalt Steel"></div>
+            <div class="color-swatch" style="background:#141414;" onclick="updateSetting('visual.uiColor','carbon_fiber'); applySettings(); renderSettings();" title="Carbon Fiber"></div>
+            <div class="color-swatch" style="background:#221010;" onclick="updateSetting('visual.uiColor','deep_maroon'); applySettings(); renderSettings();" title="Deep Maroon"></div>
+            <div class="color-swatch" style="background:#252a34;" onclick="updateSetting('visual.uiColor','gunmetal'); applySettings(); renderSettings();" title="Gunmetal"></div>
+            <div class="color-swatch" style="background:#0a1a14;" onclick="updateSetting('visual.uiColor','emerald_ui'); applySettings(); renderSettings();" title="Emerald UI"></div>
+            <div class="color-swatch" style="background:#1b1422;" onclick="updateSetting('visual.uiColor','bismuth'); applySettings(); renderSettings();" title="Bismuth"></div>
+            <div class="color-swatch" style="background:#121212;" onclick="updateSetting('visual.uiColor','stealth'); applySettings(); renderSettings();" title="Stealth Black"></div>
+                        </div>
+                    </div>
+
+
+
+
+<div class="settings-pane" id="settings-themes">
+    <h3>MODULES DE PERSONNALITÉ (PRESETS)</h3>
+    <div class="theme-grid">
+        <div class="theme-card" onclick="loadPreset('tron')">
+            <img src="https://path-to-your-image/tron.jpg" alt="Tron">
+            <span>TRON: GRID</span>
+        </div>
+        <div class="theme-card" onclick="loadPreset('ultron')">
+            <img src="https://path-to-your-image/ultron.jpg" alt="Ultron">
+            <span>ULTRON: PRIME</span>
+        </div>
+        </div>
+</div>
+
+<style>
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+.theme-card {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    text-align: center;
+    background: rgba(255,255,255,0.05);
+}
+.theme-card img {
+    width: 100%;
+    height: 60px;
+    object-fit: cover;
+    filter: grayscale(100%);
+    transition: 0.3s;
+}
+.theme-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-5px);
+    box-shadow: var(--glow-c);
+}
+.theme-card:hover img { filter: grayscale(0%); }
+.theme-card span { font-size: 10px; padding: 5px; display: block; }
+</style>
+
+
+
+
+
+
+                    <!-- Style Visualizer -->
+                    <div class="setting-card">
+                        <label class="s-label">STYLE VISUALIZER 3D</label>
+                        <select class="cyber-select" onchange="updateSetting('visual.vizStyle', this.value); rebuildSidebarViz(); rebuildLiveViz();">
+                            <option value="sphere" selected>sphere</option>
+                            <option value="core">core</option>
+                            <option value="matrix">matrix</option>
+                            <option value="vortex">vortex</option>
+                            <option value="dna">dna</option>
+                            <option value="neural">neural</option>
+                            <option value="waves">waves</option>
+                            <option value="rings">rings</option>
+                            <option value="plasma">plasma</option>
+                            <option value="crystal">crystal</option>
+                            <option value="rain">rain</option>
+                            <option value="nebula">nebula</option>
+                            <option value="city">city</option>
+                            <option value="blackhole">blackhole</option>
+                        </select>
+                    </div>
+
+                    <!-- Densité -->
+                    <div class="setting-card">
+                        <label class="s-label">DENSITÉ INTERFACE</label>
+                        <div class="radio-group">
+                            <div class="radio-opt" onclick="updateSetting('visual.density','compact'); renderSettings()">COMPACT</div>
+                            <div class="radio-opt active" onclick="updateSetting('visual.density','normal'); renderSettings()">NORMAL</div>
+                            <div class="radio-opt" onclick="updateSetting('visual.density','spacious'); renderSettings()">SPACIOUS</div>
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="setting-card">
+                        <div class="setting-row">
+                            <div>
+                                <div style="font-size:0.85rem;">✨ Mode fluide (lissage)</div>
+                                <div class="s-desc">Animations plus douces</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked onchange="updateSetting('visual.smoothMode', this.checked); state.smoothMode = this.checked;">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <div class="setting-row">
+                            <div>
+                                <div style="font-size:0.85rem;">🎬 Animations de fond</div>
+                                <div class="s-desc">Grille animée et particules</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked onchange="updateSetting('visual.bgAnimations', this.checked); applySettings();">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-footer">
+            <span class="menu-footer-info" id="menu-footer-info">💾 Sauvegarde auto (localStorage)</span>
+            <div id="menu-footer-actions">
+                <button class="menu-btn danger" onclick="resetSettings()">↺ RESET</button>
+                <button class="menu-btn primary" onclick="closeMenu()">FERMER</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sidebar">
+    <div class="logo-area">
+        <div class="logo-title">
+<div class="hex-logo">
+    <svg viewBox="0 0 40 46" fill="none">
+        <polygon points="20,2 38,12 38,34 20,44 2,34 2,12" 
+                 stroke="var(--accent)" 
+                 stroke-width="1.5" 
+                 fill="none" 
+                 style="opacity: 0.6; filter: drop-shadow(var(--glow-c));">
+        </polygon>
+        
+        <polygon points="20,8 32,15 32,31 20,38 8,31 8,15" 
+                 stroke="var(--accent)" 
+                 stroke-width="1" 
+                 fill="var(--accent-dim)">
+        </polygon>
+        
+        <text x="20" y="27" 
+              text-anchor="middle" 
+              fill="var(--accent)" 
+              font-family="Orbitron" 
+              font-size="11" 
+              font-weight="900"
+              style="text-shadow: var(--glow-c);">J</text>
+    </svg>
+</div>
+            JARVIS
+        </div>
+        <div class="logo-sub">NEURAL INTERFACE v14</div>
+    </div>
+    <div class="status-row">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-text" id="status-label">SYSTÈME EN LIGNE</div>
+    <div id="sidebar-toggle" class="sidebar-toggle">
+    <div class="hamburger-line"></div>
+    <div class="hamburger-line"></div>
+    <div class="hamburger-line"></div>
+</div></div>
+    <div style="flex:1; overflow-y:auto; padding-bottom:8px;">
+        <div class="sb-section" style="padding-top:14px;">
+            <div class="sb-label">Modèle actif</div>
+            <select class="cyber-select" id="model-select">
+                <optgroup label="── Google Gemini">
+                    <option value="gemini/gemini-2.0-flash" selected="">Gemini 2.0 Flash</option>
+                    <option value="gemini/gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                    <option value="gemini/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </optgroup>
+                <optgroup label="── Anthropic">
+                    <option value="anthropic/claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                    <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                </optgroup>
+                <optgroup label="── OpenAI">
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="openai/gpt-4o">GPT-4o</option>
+                </optgroup>
+                <optgroup label="── Mistral">
+                    <option value="mistral/mistral-small-latest">Mistral Small</option>
+                    <option value="mistral/mistral-large-latest">Mistral Large</option>
+                </optgroup>
+                <optgroup label="── Ollama (local)">
+                    <option value="ollama/llama3">Llama 3</option>
+                    <option value="ollama/mistral-small3.2">mistral-small3.2</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="sb-section" style="padding-top:14px;">
+            <div class="sb-label">Agents disponibles</div>
+            <div class="agent-list" id="agent-list">
+                
+                <div class="agent-card" data-agent="PlannerAgent">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">PlannerAgent</span>
+                </div>
+                
+                <div class="agent-card" data-agent="CodeMaster">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">CodeMaster</span>
+                </div>
+                
+                <div class="agent-card" data-agent="GitAgent">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">GitAgent</span>
+                </div>
+                
+                <div class="agent-card" data-agent="ShellAgent">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">ShellAgent</span>
+                </div>
+                
+                <div class="agent-card" data-agent="Manager">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">Manager</span>
+                </div>
+                
+                <div class="agent-card" data-agent="WebResearcher">
+                    <div class="agent-dot"></div>
+                    <span class="agent-name">WebResearcher</span>
+                </div>
+                
+            </div>
+        </div>
+        <div class="sb-section" style="padding-top:14px;">
+            <div class="sb-label">Raccourcis</div>
+            <div style="padding:4px 0;">
+                <div class="toggle-row">
+                    <div class="toggle-label">⚡ Streaming</div>
+                    <label class="toggle"><input type="checkbox" id="stream-toggle" checked=""><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label">🔊 Synthèse vocale</div>
+                    <label class="toggle"><input type="checkbox" id="tts-toggle"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label">🎙️ Écoute continue</div>
+                    <label class="toggle"><input type="checkbox" id="continuous-toggle"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-label">📊 Visualisation 3D</div>
+                    <label class="toggle"><input type="checkbox" id="viz-toggle"><span class="toggle-slider"></span></label>
+                </div>
+            </div>
+        </div>
+        <div class="sb-section" style="padding-top:14px;">
+            <div class="sb-label">Interface neurale</div>
+            <div id="viz-container" style="display: block; height: 180px; position: relative; margin-top: 10px;">
+                <canvas id="viz-canvas" width="224" height="180" style="width: 224px; height: 180px;"></canvas>
+            </div>
+        </div>
+        <div class="sb-section" style="padding-top:14px; padding-bottom:14px;">
+            <div class="sb-label">Session</div>
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-val" id="stat-msgs">0</div><div class="stat-key">MESSAGES</div></div>
+                <div class="stat-box"><div class="stat-val" id="stat-latency">—</div><div class="stat-key">LATENCE</div></div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-val" id="stat-ttfb">—</div><div class="stat-key">TTFB</div></div>
+                <div class="stat-box"><div class="stat-val" id="stat-tps">—</div><div class="stat-key">TOK/S</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="sb-bottom">
+        <button class="sb-btn" onclick="exportChat()">📥 EXPORT</button>
+        <button class="sb-btn danger" onclick="clearChat()">🗑 PURGE</button>
+    </div>
+</div>
+
+<div id="main">
+<div id="topbar">
+        <div class="topbar-left">
+            <div class="breadcrumb">JARVIS / <span>CHAT</span></div>
+            <div class="active-agent-badge">
+                <div class="agent-dot"></div>
+                <span id="active-agent-name">En attente</span>
+            </div>
+            <div class="topbar-menu">
+                <span class="menu-link" onclick="openMenu(&#39;infos&#39;)">📊 INFOS</span>
+                <span class="menu-link" onclick="openMenu(&#39;settings&#39;)">⚙️ PARAMÈTRES</span>
+                <span class="menu-link" onclick="openMenu(&#39;benchs&#39;)">🚀 BENCHS</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="latency-badge" id="latency-display" style="display:none;">— ms</div>
+            <button class="icon-btn" id="terminal-btn" title="Terminal" onclick="toggleTerminal()">⌨</button>
+            <button class="icon-btn" id="live-btn" title="Mode Live" onclick="toggleLive()">🔴</button>
+            <button class="icon-btn" title="Plein écran" onclick="toggleFullscreen()">⛶</button>
+        </div>
+    </div>
+    <div id="chat-window">
+        <div id="live-stage">
+            <div id="live-status">JARVIS</div>
+            <div id="live-canvas-wrap"><canvas id="live-canvas"></canvas></div>
+            <div id="live-subtitle">Mode immersif · Activez l'écoute pour parler</div>
+            <button id="live-listen-btn" onclick="toggleContinuousListening()">🎙 ACTIVER L'ÉCOUTE</button>
+        </div>
+        <div class="welcome" id="welcome-screen">
+            <svg class="welcome-hex" viewBox="0 0 100 116" fill="none">
+                <polygon points="50,5 95,30 95,86 50,111 5,86 5,30" stroke="#00c8ff" stroke-width="2" fill="rgba(0,200,255,0.04)"></polygon>
+                <polygon points="50,18 82,36 82,80 50,98 18,80 18,36" stroke="#00c8ff" stroke-width="1" fill="none" opacity="0.4"></polygon>
+                <text x="50" y="68" text-anchor="middle" fill="#00c8ff" font-family="Orbitron" font-size="28" font-weight="900">J</text>
+            </svg>
+            <h2>JARVIS ONLINE</h2>
+            <p>Assistant IA modulaire prêt. Préfixe <code style="color:var(--amber);">!</code> pour une commande shell.</p>
+            <div class="welcome-chips">
+                <div class="welcome-chip" onclick="fillInput(&#39;Bonjour  présentes toi&#39;)">❔ Présentation</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;Analyse l\&#39;état du système&#39;)">🖥 Système</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;Crée un script Python pour surveiller le CPU&#39;)">🐍 Script</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;Recherche les dernières avancées en IA&#39;)">🔍 Web</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;!df -h&#39;)">💾 Disque</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;Montre-moi le statut git&#39;)">📦 Git</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;Qui est le president des états unis )">⏳ Temporalité</div>
+                <div class="welcome-chip" onclick="fillInput(&#39;fais un test de vitesse internet&#39;)"> 📶Vitesse internet</div>
+            </div>
+        </div>
+        <div id="thinking">
+            <span style="letter-spacing:0.1em;">CONNEXION</span>
+            <div class="think-dots"><div class="think-dot"></div><div class="think-dot"></div><div class="think-dot"></div></div>
+        </div>
+    </div>
+    <div id="file-chip-area"></div>
+    <div id="terminal-wrapper">
+        <div class="terminal-bar">
+            <span class="terminal-title">▶ TERMINAL / SHELL</span>
+            <button class="terminal-close" onclick="toggleTerminal()">✕ FERMER</button>
+        </div>
+        <div id="terminal-output"></div>
+    </div>
+<div id="input-area">
+        <label class="input-attach" for="file-upload" title="Joindre un fichier">📎</label>
+        <input type="file" id="file-upload" style="display:none;" multiple="">
+        <button id="mic-btn" title="Dictée (clic) · Maintenir Espace">🎤</button>
+        <input type="text" id="user-input" placeholder="Posez une question ou !commande shell…" autocomplete="off">
+        <button class="stop-btn" id="stop-btn">■ STOP</button>
+        <button class="send-btn" id="send-btn">ENVOYER</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const SETTINGS_KEY = 'jarvis.settings.v1';
+const RECORDS_KEY = 'jarvis.records.v1';
+const ACHIEVEMENTS_KEY = 'jarvis.achievements.v1';
+
+const DEFAULT_SETTINGS = {
+    chat: { defaultModel:'gemini/gemini-2.0-flash', streaming:true, historyLimit:15, responseStyle:'balanced', forcedLanguage:'auto' },
+    vocal: { ttsEnabled:false, ttsVoice:'ff_siwis', ttsSpeed:1.0, continuousListen:false, silenceDelay:1.5, bargeIn:true, pushToTalkSpace:true },
+    visual: { accentColor:'cyan', vizStyle:'sphere', vizEnabled:false, density:'normal', smoothMode:true, bgAnimations:true },
+    advanced: { pixelRatio:1.5, timeoutSeconds:60, renderThrottleMs:50 },
+};
+
+const ACCENT_COLORS = {
+    cyan:   { main:'#00c8ff', dim:'rgba(0,200,255,0.1)',  glow:'0 0 20px rgba(0,200,255,0.4)',  borderHi:'rgba(0,200,255,0.5)',  border:'rgba(0,200,255,0.15)' },
+    amber:  { main:'#ffaa00', dim:'rgba(255,170,0,0.1)',  glow:'0 0 20px rgba(255,170,0,0.4)',  borderHi:'rgba(255,170,0,0.5)',  border:'rgba(255,170,0,0.15)' },
+    green:  { main:'#00ff88', dim:'rgba(0,255,136,0.1)',  glow:'0 0 20px rgba(0,255,136,0.4)',  borderHi:'rgba(0,255,136,0.5)',  border:'rgba(0,255,136,0.15)' },
+    purple: { main:'#c87aff', dim:'rgba(200,122,255,0.1)',glow:'0 0 20px rgba(200,122,255,0.4)',borderHi:'rgba(200,122,255,0.5)',border:'rgba(200,122,255,0.15)' },
+    red:    { main:'#ff4466', dim:'rgba(255,68,102,0.1)', glow:'0 0 20px rgba(255,68,102,0.4)', borderHi:'rgba(255,68,102,0.5)', border:'rgba(255,68,102,0.15)' },
+    cyan2:   { main:'#00c8ff', dim:'rgba(0,200,255,0.1)',  glow:'0 0 20px rgba(0,200,255,0.4)',  borderHi:'rgba(0,200,255,0.5)',  border:'rgba(0,200,255,0.15)' },
+    amber2:  { main:'#ffaa00', dim:'rgba(255,170,0,0.1)',  glow:'0 0 20px rgba(255,170,0,0.4)',  borderHi:'rgba(255,170,0,0.5)',  border:'rgba(255,170,0,0.15)' },
+    green:  { main:'#00ff88', dim:'rgba(0,255,136,0.1)',  glow:'0 0 20px rgba(0,255,136,0.4)',  borderHi:'rgba(0,255,136,0.5)',  border:'rgba(0,255,136,0.15)' },
+    purple: { main:'#c87aff', dim:'rgba(200,122,255,0.1)',glow:'0 0 20px rgba(200,122,255,0.4)',borderHi:'rgba(200,122,255,0.5)',border:'rgba(200,122,255,0.15)' },
+    red:    { main:'#ff4466', dim:'rgba(255,68,102,0.1)', glow:'0 0 20px rgba(255,68,102,0.4)', borderHi:'rgba(255,68,102,0.5)', border:'rgba(255,68,102,0.15)' },
+};
+
+function deepMerge(target, source) {
+    for (const k in source) {
+        if (source[k] && typeof source[k]==='object' && !Array.isArray(source[k]))
+            target[k] = deepMerge(target[k]||{}, source[k]);
+        else target[k] = source[k];
+    }
+    return target;
+}
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+        return deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), JSON.parse(raw));
+    } catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
+}
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {} }
+
+let settings = loadSettings();
+
+const ACHIEVEMENTS_DEF = [
+    { id:'first_msg',    icon:'🎯', label:'Premier message',     test:r=>r.totalMessages>=1 },
+    { id:'first_voice',  icon:'🎤', label:'Première voix',       test:r=>r.voiceMessages>=1 },
+    { id:'first_bench',  icon:'🚀', label:'Premier benchmark',   test:r=>r.benchmarksRun>=1 },
+    { id:'fast_ttfb',    icon:'⚡', label:'TTFB sous 300ms',     test:r=>r.bestTTFB>0 && r.bestTTFB<300 },
+    { id:'fast_tps',     icon:'🏎', label:'40+ tok/s',           test:r=>r.bestTPS>=40 },
+    { id:'msg_50',       icon:'💬', label:'50 messages',         test:r=>r.totalMessages>=50 },
+    { id:'msg_100',      icon:'🏆', label:'100 messages',        test:r=>r.totalMessages>=100 },
+    { id:'long_session', icon:'⏱', label:'1h de session',        test:r=>r.longestSessionSec>=3600 },
+    { id:'s_grade',      icon:'🌟', label:'Note S obtenue',      test:r=>r.bestGrade==='S' },
+    { id:'tested_5',     icon:'🧪', label:'5 modèles testés',    test:r=>r.modelsTested>=5 },
+    { id:'agent_test',   icon:'🤖', label:'Test agent',          test:r=>r.agentTestsRun>=1 },
+    { id:'sys_check',    icon:'🖥', label:'Diag système',        test:r=>r.sysChecksRun>=1 },
+];
+
+function loadRecords() {
+    try { const raw=localStorage.getItem(RECORDS_KEY); if (raw) return JSON.parse(raw); } catch {}
+    return { bestTTFB:0, bestTTFBModel:'', bestTTFBDate:'', bestTPS:0, bestTPSModel:'', bestTPSDate:'',
+             bestGrade:'', bestScore:0, bestScoreModel:'', bestScoreDate:'',
+             bestAgentScore:0, bestAgentName:'', bestAgentDate:'',
+             totalMessages:0, voiceMessages:0, benchmarksRun:0, agentTestsRun:0, sysChecksRun:0,
+             modelsTested:0, modelsTestedSet:[], longestSessionSec:0 };
+}
+function saveRecords() { try { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); } catch {} }
+function loadAchievements() { try { const r=localStorage.getItem(ACHIEVEMENTS_KEY); if (r) return JSON.parse(r); } catch {} return {}; }
+function saveAchievements() { try { localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(achievements)); } catch {} }
+
+let records = loadRecords();
+let achievements = loadAchievements();
+
+function checkAchievements() {
+    const unlocked = [];
+    for (const a of ACHIEVEMENTS_DEF) {
+        if (!achievements[a.id] && a.test(records)) {
+            achievements[a.id] = { unlockedAt: Date.now() };
+            unlocked.push(a);
+        }
+    }
+    if (unlocked.length) { saveAchievements(); unlocked.forEach(a => showToast(`🏆 ${a.label}`)); }
+}
+
+function recordBenchResult(model, ttfb, tps, score, grade) {
+    const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+    if (ttfb > 0 && (records.bestTTFB === 0 || ttfb < records.bestTTFB)) {
+        records.bestTTFB = ttfb; records.bestTTFBModel = model; records.bestTTFBDate = today;
+    }
+    if (tps > records.bestTPS) { records.bestTPS = tps; records.bestTPSModel = model; records.bestTPSDate = today; }
+    if (score > records.bestScore) {
+        records.bestScore = score; records.bestGrade = grade;
+        records.bestScoreModel = model; records.bestScoreDate = today;
+    }
+    if (!records.modelsTestedSet.includes(model)) {
+        records.modelsTestedSet.push(model);
+        records.modelsTested = records.modelsTestedSet.length;
+    }
+    records.benchmarksRun++;
+    saveRecords(); checkAchievements();
+}
+function recordAgentResult(agentName, score) {
+    const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+    if (score > records.bestAgentScore) {
+        records.bestAgentScore = score; records.bestAgentName = agentName; records.bestAgentDate = today;
+    }
+    records.agentTestsRun++;
+    saveRecords(); checkAchievements();
+}
+
+const state = {
+    selectedFiles:[], inputHistory:[], histIdx:-1, abortController:null, msgCount:0,
+    currentAudio:null, audioSourceNode:null, ttsEnabled:false, streamEnabled:true, smoothMode:true,
+    micActive:false, continuousMode:false, recognition:null, interimTranscript:'', finalTranscript:'',
+    silenceTimer:null, shellWS:null, isLive:false, jarvisSpeaking:false, spaceHeld:false,
+    ttsBuffer:'', ttsQueue:[], ttsAudioQueue:[], ttsGenerating:false, ttsPlaying:false, ttsAbort:null,
+    sessionStart: Date.now(), benchRunning:false,
+    selectedBenchModels:['gemini/gemini-2.0-flash','anthropic/claude-haiku-4-5-20251001'],
+    sysStatsTimer:null,
+};
+
+const $ = id => document.getElementById(id);
+const dom = {
+    chatWindow:$('chat-window'), thinking:$('thinking'), welcome:$('welcome-screen'),
+    input:$('user-input'), sendBtn:$('send-btn'), stopBtn:$('stop-btn'),
+    statusDot:$('status-dot'), statusLabel:$('status-label'),
+    activeAgent:$('active-agent-name'), latency:$('latency-display'),
+    statMsgs:$('stat-msgs'), statLatency:$('stat-latency'), statTTFB:$('stat-ttfb'), statTPS:$('stat-tps'),
+    toast:$('toast'), modelSelect:$('model-select'),
+    fileArea:$('file-chip-area'), fileInput:$('file-upload'), micBtn:$('mic-btn'),
+    streamToggle:$('stream-toggle'), ttsToggle:$('tts-toggle'),
+    continuousToggle:$('continuous-toggle'), vizToggle:$('viz-toggle'),
+    vizContainer:$('viz-container'), vizCanvas:$('viz-canvas'),
+    terminal:$('terminal-wrapper'), terminalOut:$('terminal-output'),
+    liveBtn:$('live-btn'), liveStage:$('live-stage'),
+    liveCanvas:$('live-canvas'), liveStatus:$('live-status'),
+    liveSubtitle:$('live-subtitle'), liveListenBtn:$('live-listen-btn'),
+    menuOverlay:$('menu-overlay'), menuTitle:$('menu-title'),
+    menuMeta:$('menu-meta'), menuBody:$('menu-body'),
+    menuFooterInfo:$('menu-footer-info'), menuFooterActions:$('menu-footer-actions'),
+};
+
+function showToast(msg) {
+    dom.toast.textContent = msg;
+    dom.toast.style.display = 'block';
+    clearTimeout(dom.toast._t);
+    dom.toast._t = setTimeout(() => { dom.toast.style.display = 'none'; }, 1800);
+}
+
+function applySettings() {
+    const root = document.documentElement;
+    
+    // 1. ACCENT (Bordures, Glow, Textes)
+    const c = ACCENT_COLORS[settings.visual.accentColor] || ACCENT_COLORS.cyan;
+    root.style.setProperty('--accent', c.main);
+    root.style.setProperty('--accent-dim', c.dim);
+    root.style.setProperty('--glow-c', c.glow);
+    root.style.setProperty('--border-hi', c.borderHi);
+    root.style.setProperty('--border', c.border);
+
+    // 2. FOND DU CHAT (#chat-window)
+    const bgMap = {
+        'dark': 'rgb(10, 10, 12)',
+        'navy': 'rgb(26, 26, 46)',
+        'deep': 'rgb(22, 33, 62)',
+        'gray': 'rgb(26, 26, 26)',
+        'black': 'rgb(0, 0, 0)',
+            'void_blue': '#02040a',
+    'dark_petrol': '#050a0a',
+    'obsidian': '#080808',
+    'midnight_purple': '#0a0510',
+    'deep_forest': '#040806',
+    'black': '#000000'
+    };
+    if (settings.visual.bgColor) {
+        const selectedBG = bgMap[settings.visual.bgColor] || 'rgb(0, 0, 0)';
+        root.style.setProperty('--bg-main', selectedBG);
+        // On l'applique aussi au body au cas où il y aurait des zones vides
+        document.body.style.backgroundColor = selectedBG;
+    }
+
+    // 3. INTERFACE (Fenêtres de réglages, inputs)
+    const uiMap = {
+        'slate': 'rgb(30, 30, 46)',
+        'wine': 'rgb(45, 27, 51)',
+        'blue': 'rgb(4, 3, 28)',
+        'bronze': 'rgb(51, 37, 27)',
+        'carbon': 'rgb(37, 37, 37)',
+        'titanium': '#1a1a1a',
+        'cobalt': '#10141f',
+        'carbon_fiber': '#141414',
+        'deep_maroon': '#221010',
+        'gunmetal': '#252a34',
+        'emerald_ui': '#0a1a14',
+        'bismuth': '#1b1422',
+        'stealth': '#121212'
+    };
+    if (settings.visual.uiColor) {
+        root.style.setProperty('--ui-card-bg', uiMap[settings.visual.uiColor] || 'rgba(27, 45, 42, 0.9)');
+    }
+
+    // 4. SYNCHRONISATION DES ÉLÉMENTS DU DOM
+    document.body.classList.toggle('no-bg-anim', !settings.visual.bgAnimations);
+    
+    // Vérification de sécurité avant mise à jour des éléments
+    if (dom.streamToggle) dom.streamToggle.checked = settings.chat.streaming;
+    if (dom.ttsToggle) dom.ttsToggle.checked = settings.vocal.ttsEnabled;
+    if (dom.continuousToggle) dom.continuousToggle.checked = settings.vocal.continuousListen;
+    if (dom.vizToggle) dom.vizToggle.checked = settings.visual.vizEnabled;
+    if (dom.modelSelect) dom.modelSelect.value = settings.chat.defaultModel;
+
+    // 5. MISE À JOUR DE L'ÉTAT GLOBAL
+    state.streamEnabled = settings.chat.streaming;
+    state.ttsEnabled = settings.vocal.ttsEnabled;
+    state.smoothMode = settings.visual.smoothMode;
+}
+
+let audioCtx = null, analyser = null, dataArray = null;
+let smoothIntensity = 0, smoothBass = 0, smoothTreble = 0;
+
+function ensureAudioCtx() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.85;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return {audioCtx, analyser, dataArray};
+}
+function computeAudioMetrics() {
+    if (!analyser || !dataArray) return {intensity:0, bass:0, treble:0};
+    analyser.getByteFrequencyData(dataArray);
+    const len = dataArray.length;
+    let sum = 0, bassSum = 0, trebleSum = 0;
+    const bassEnd = Math.floor(len * 0.25);
+    const trebleStart = Math.floor(len * 0.6);
+    for (let i = 0; i < len; i++) {
+        sum += dataArray[i];
+        if (i < bassEnd) bassSum += dataArray[i];
+        else if (i >= trebleStart) trebleSum += dataArray[i];
+    }
+    const raw = (sum / len) / 255;
+    const bass = (bassSum / bassEnd) / 255;
+    const treble = (trebleSum / (len - trebleStart)) / 255;
+    const k = state.smoothMode ? 0.12 : 0.4;
+    smoothIntensity = smoothIntensity * (1-k) + raw * k;
+    smoothBass = smoothBass * (1-k) + bass * k;
+    smoothTreble = smoothTreble * (1-k) + treble * k;
+    return {intensity:smoothIntensity, bass:smoothBass, treble:smoothTreble};
+}
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function renderMarkdown(text) {
+    if (typeof marked === 'undefined') return escapeHtml(text);
+    try { return marked.parse(text, {breaks:true, gfm:true}); } catch { return escapeHtml(text); }
+}
+function attachCodeCopyButtons(container) {
+    container.querySelectorAll('pre').forEach(pre => {
+        if (pre.querySelector('.copy-code-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'copy-code-btn'; btn.textContent = 'COPIER';
+        btn.onclick = () => {
+            const code = pre.querySelector('code')?.textContent || pre.textContent;
+            navigator.clipboard.writeText(code);
+            btn.textContent = 'COPIÉ ✓';
+            setTimeout(() => btn.textContent = 'COPIER', 2000);
+        };
+        pre.appendChild(btn);
+    });
+}
+
+function createAssistantBubble(agentName) {
+    if (dom.welcome && dom.welcome.parentNode) dom.welcome.remove();
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    meta.textContent = `${agentName || 'JARVIS'} · ${now}`;
+    row.appendChild(meta);
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble streaming';
+    const content = document.createElement('div');
+    bubble.appendChild(content);
+    row.appendChild(bubble);
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    const ttsBtn = document.createElement('button');
+    ttsBtn.className = 'msg-act-btn'; ttsBtn.textContent = '🔊';
+    ttsBtn.onclick = () => speakFromBtn(ttsBtn, content.textContent || '');
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'msg-act-btn'; copyBtn.textContent = '📋';
+    copyBtn.onclick = () => { navigator.clipboard.writeText(content.textContent || ''); showToast('COPIÉ'); };
+    actions.appendChild(ttsBtn); actions.appendChild(copyBtn);
+    row.appendChild(actions);
+    dom.chatWindow.insertBefore(row, dom.thinking);
+    autoScroll();
+    return {row, bubble, content};
+}
+function addUserMessage(text) {
+    if (dom.welcome && dom.welcome.parentNode) dom.welcome.remove();
+    if (state.isLive) { dom.liveSubtitle.textContent = '"' + text + '"'; return; }
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    const meta = document.createElement('div'); meta.className = 'msg-meta';
+    const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    meta.textContent = `VOUS · ${now}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble'; bubble.textContent = text;
+    row.appendChild(meta); row.appendChild(bubble);
+    dom.chatWindow.insertBefore(row, dom.thinking);
+    autoScroll();
+}
+let _scrollPending = false;
+function autoScroll() {
+    if (state.isLive || _scrollPending) return;
+    _scrollPending = true;
+    requestAnimationFrame(() => { dom.chatWindow.scrollTop = dom.chatWindow.scrollHeight; _scrollPending = false; });
+}
+function setThinking(active, label) {
+    dom.thinking.style.display = (active && !state.isLive) ? 'flex' : 'none';
+    if (active) {
+        dom.statusDot.style.background = '#ffaa00';
+        dom.statusLabel.style.color = '#ffaa00';
+        dom.statusLabel.textContent = label || 'TRAITEMENT…';
+    } else {
+        dom.statusDot.style.background = 'var(--green)';
+        dom.statusLabel.style.color = 'var(--green)';
+        dom.statusLabel.textContent = 'SYSTÈME EN LIGNE';
+    }
+}
+function setActiveAgent(name) {
+    dom.activeAgent.textContent = name;
+    document.querySelectorAll('.agent-card').forEach(c => c.classList.toggle('active', c.dataset.agent === name));
+}
+
+async function sendStream(query, files) {
+    const fd = new FormData();
+    fd.append('query', query); fd.append('model', dom.modelSelect.value);
+    files.forEach(f => fd.append('files', f));
+    state.abortController = new AbortController();
+    const t0 = performance.now();
+    let ttfb = null, tokenCount = 0, fullText = '', agentName = null;
+    let bubble = null, contentDiv = null, pendingRender = false;
+    setThinking(true, 'CONNEXION');
+    if (state.isLive) dom.liveStatus.textContent = 'CONNEXION…';
+    pauseRecognitionDuringResponse();
+    try {
+        const resp = await fetch('/chat/stream', { method:'POST', body:fd, signal:state.abortController.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        const scheduleRender = () => {
+            if (pendingRender) return;
+            pendingRender = true;
+            requestAnimationFrame(() => {
+                if (contentDiv) {
+                    contentDiv.innerHTML = renderMarkdown(fullText) +
+                        '<span style="display:inline-block;width:8px;height:14px;background:var(--accent);margin-left:2px;animation:blink 1s steps(2) infinite;vertical-align:middle;"></span>';
+                    autoScroll();
+                }
+                if (state.isLive) {
+                    const tail = fullText.slice(-180).replace(/[#*`>_-]/g, '').trim();
+                    dom.liveSubtitle.textContent = tail || '…';
+                }
+                pendingRender = false;
+            });
+        };
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, {stream:true});
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') continue;
+                let event;
+                try { event = JSON.parse(data); } catch { continue; }
+                if (event.type === 'agent') {
+                    agentName = event.data;
+                    setActiveAgent(agentName);
+                    setThinking(true, `${agentName.toUpperCase()}…`);
+                    if (state.isLive) dom.liveStatus.textContent = agentName.toUpperCase();
+                }
+                else if (event.type === 'token') {
+                    if (ttfb === null) {
+                        ttfb = performance.now() - t0;
+                        dom.statTTFB.textContent = ttfb < 1000 ? `${ttfb.toFixed(0)}ms` : `${(ttfb/1000).toFixed(1)}s`;
+                        setThinking(false);
+                        if (!state.isLive) {
+                            const c = createAssistantBubble(agentName);
+                            bubble = c.bubble; contentDiv = c.content;
+                        }
+                        if (state.isLive) dom.liveStatus.textContent = 'JARVIS PARLE';
+                    }
+                    fullText += event.data;
+                    tokenCount++;
+                    if (state.ttsEnabled) ttsFeed(event.data);
+                    scheduleRender();
+                }
+                else if (event.type === 'tool') setThinking(true, `OUTIL: ${event.data.name} (${event.data.status})`);
+                else if (event.type === 'meta' && event.data.latency) {
+                    dom.latency.textContent = event.data.latency;
+                    dom.latency.style.display = 'flex';
+                    dom.statLatency.textContent = event.data.latency;
+                }
+                else if (event.type === 'error') {
+                    if (!bubble && !state.isLive) {
+                        const c = createAssistantBubble(agentName);
+                        bubble = c.bubble; contentDiv = c.content;
+                    }
+                    fullText += `\n\n⚠ Erreur : ${event.data}`;
+                    scheduleRender();
+                }
+            }
+        }
+    } catch (e) {
+        if (e.name === 'AbortError') { if (contentDiv) fullText += '\n\n_(arrêté)_'; }
+        else {
+            if (!bubble && !state.isLive) { const c = createAssistantBubble(agentName); bubble = c.bubble; contentDiv = c.content; }
+            fullText = `⚠ Erreur réseau : ${e.message}`;
+        }
+    } finally {
+        if (contentDiv) { contentDiv.innerHTML = renderMarkdown(fullText); attachCodeCopyButtons(contentDiv); }
+        if (bubble) bubble.classList.remove('streaming');
+        setThinking(false);
+        const totalMs = performance.now() - t0;
+        const tps = tokenCount > 0 && totalMs > 0 ? (tokenCount / (totalMs / 1000)).toFixed(1) : '—';
+        dom.statTPS.textContent = tps;
+        records.totalMessages++;
+        if (ttfb && ttfb > 0) {
+            if (records.bestTTFB === 0 || ttfb < records.bestTTFB) {
+                records.bestTTFB = Math.round(ttfb);
+                records.bestTTFBModel = dom.modelSelect.value;
+                records.bestTTFBDate = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+            }
+        }
+        if (tps !== '—' && parseFloat(tps) > records.bestTPS) {
+            records.bestTPS = parseFloat(tps);
+            records.bestTPSModel = dom.modelSelect.value;
+            records.bestTPSDate = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+        }
+        saveRecords(); checkAchievements();
+        if (state.ttsEnabled && fullText.trim()) ttsFlush();
+        else { if (state.isLive) dom.liveStatus.textContent = 'JARVIS'; resumeRecognitionAfterResponse(); }
+        state.abortController = null;
+    }
+}
+
+async function sendNonStream(query, files) {
+    const fd = new FormData();
+    fd.append('query', query); fd.append('model', dom.modelSelect.value);
+    files.forEach(f => fd.append('files', f));
+    state.abortController = new AbortController();
+    setThinking(true, 'TRAITEMENT…');
+    pauseRecognitionDuringResponse();
+    const t0 = performance.now();
+    try {
+        const resp = await fetch('/chat', {method:'POST', body:fd, signal:state.abortController.signal});
+        const data = await resp.json();
+        if (!state.isLive) {
+            const c = createAssistantBubble(null);
+            c.content.innerHTML = renderMarkdown(data.response || '(vide)');
+            c.bubble.classList.remove('streaming');
+            attachCodeCopyButtons(c.content);
+        }
+        const lat = data.latency || `${((performance.now()-t0)/1000).toFixed(2)}s`;
+        dom.latency.textContent = lat; dom.latency.style.display = 'flex';
+        dom.statLatency.textContent = lat;
+        if (state.ttsEnabled && data.response) {
+            state.jarvisSpeaking = true;
+            document.body.classList.add('jarvis-speaking');
+            await speakTTS(data.response);
+            state.jarvisSpeaking = false;
+            document.body.classList.remove('jarvis-speaking');
+        }
+        records.totalMessages++; saveRecords(); checkAchievements();
+    } catch (e) {
+        if (e.name !== 'AbortError') {
+            const c = createAssistantBubble(null);
+            c.content.innerHTML = renderMarkdown(`⚠ ${e.message}`);
+            c.bubble.classList.remove('streaming');
+        }
+    } finally {
+        setThinking(false);
+        state.abortController = null;
+        resumeRecognitionAfterResponse();
+    }
+}
+
+async function sendMessage() {
+    const query = dom.input.value.trim();
+    if (!query && state.selectedFiles.length === 0) return;
+    if (state.abortController) return;
+    state.inputHistory.push(query);
+    state.histIdx = state.inputHistory.length;
+    dom.input.value = '';
+    if (query.startsWith('!')) {
+        dom.terminal.style.display = 'block';
+        dom.terminalOut.textContent += `\n$ ${query.slice(1)}\n`;
+        ensureShellWS();
+        if (state.shellWS && state.shellWS.readyState === WebSocket.OPEN) {
+            state.shellWS.send(JSON.stringify({command: query.slice(1)}));
+        }
+        addUserMessage(query);
+        return;
+    }
+    addUserMessage(query);
+    state.msgCount++;
+    dom.statMsgs.textContent = state.msgCount;
+    const files = state.selectedFiles.slice();
+    state.selectedFiles = []; renderChips();
+    if (state.streamEnabled) await sendStream(query, files);
+    else await sendNonStream(query, files);
+}
+
+function stopExecution() {
+    if (state.abortController) state.abortController.abort();
+    if (state.currentAudio) { state.currentAudio.pause(); state.currentAudio = null; }
+    state.jarvisSpeaking = false;
+    document.body.classList.remove('jarvis-speaking');
+    setThinking(false);
+    showToast('ARRÊTÉ');
+    resumeRecognitionAfterResponse();
+}
+
+dom.fileInput.addEventListener('change', () => {
+    for (const f of dom.fileInput.files) state.selectedFiles.push(f);
+    renderChips(); dom.fileInput.value = '';
+});
+function renderChips() {
+    dom.fileArea.innerHTML = '';
+    state.selectedFiles.forEach((f, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        chip.innerHTML = `<span>📄 ${escapeHtml(f.name)}</span>`;
+        const del = document.createElement('button');
+        del.className = 'file-chip-del'; del.textContent = '✕';
+        del.onclick = () => { state.selectedFiles.splice(i, 1); renderChips(); };
+        chip.appendChild(del);
+        dom.fileArea.appendChild(chip);
+    });
+}
+
+const SENTENCE_END = /([.!?…]+|\n\n+)\s/;
+const MIN_CHUNK_LEN = 30;
+const MAX_CHUNK_LEN = 250;
+
+dom.ttsToggle.addEventListener('change', e => {
+    state.ttsEnabled = e.target.checked;
+    settings.vocal.ttsEnabled = state.ttsEnabled; saveSettings();
+    if (!state.ttsEnabled) ttsStop();
+});
+dom.streamToggle.addEventListener('change', e => {
+    state.streamEnabled = e.target.checked;
+    settings.chat.streaming = state.streamEnabled; saveSettings();
+});
+
+function ttsStop() {
+    state.ttsBuffer = ''; state.ttsQueue = [];
+    state.ttsAudioQueue.forEach(item => { try { URL.revokeObjectURL(item.url); } catch {} });
+    state.ttsAudioQueue = [];
+    state.ttsGenerating = false; state.ttsPlaying = false;
+    if (state.ttsAbort) { try { state.ttsAbort.abort(); } catch {} state.ttsAbort = null; }
+    if (state.currentAudio) { try { state.currentAudio.pause(); } catch {} state.currentAudio = null; }
+}
+function extractSentences(buffer, force=false) {
+    const sentences = [];
+    let remaining = buffer;
+    while (remaining.length > 0) {
+        const m = remaining.match(SENTENCE_END);
+        if (m && m.index >= MIN_CHUNK_LEN) {
+            const end = m.index + m[1].length;
+            sentences.push(remaining.slice(0, end).trim());
+            remaining = remaining.slice(end).trimStart();
+        } else if (remaining.length > MAX_CHUNK_LEN) {
+            const cutComma = remaining.lastIndexOf(', ', MAX_CHUNK_LEN);
+            const cutSpace = remaining.lastIndexOf(' ', MAX_CHUNK_LEN);
+            const cut = cutComma > MIN_CHUNK_LEN ? cutComma + 1
+                      : cutSpace > MIN_CHUNK_LEN ? cutSpace + 1 : MAX_CHUNK_LEN;
+            sentences.push(remaining.slice(0, cut).trim());
+            remaining = remaining.slice(cut).trimStart();
+        } else if (force && remaining.trim().length > 0) {
+            sentences.push(remaining.trim());
+            remaining = '';
+        } else { break; }
+    }
+    return {sentences, remaining};
+}
+function cleanForTTS(text) {
+    return text
+        .replace(/```[\s\S]*?```/g, ' Code omis. ')
+        .replace(/`[^`]+`/g, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/#{1,6}\s/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/^\s*[-*+]\s/gm, '')
+        .replace(/^\s*\d+\.\s/gm, '')
+        .replace(/\n{2,}/g, '. ')
+        .replace(/\s+/g, ' ').trim();
+}
+function ttsFeed(token) {
+    if (!state.ttsEnabled) return;
+    state.ttsBuffer += token;
+    const {sentences, remaining} = extractSentences(state.ttsBuffer, false);
+    state.ttsBuffer = remaining;
+    let added = false;
+    for (const s of sentences) {
+        const clean = cleanForTTS(s);
+        if (clean.length > 2) { state.ttsQueue.push(clean); added = true; }
+    }
+    if (added) ttsRunGenerator();
+}
+function ttsFlush() {
+    if (!state.ttsEnabled) return;
+    if (state.ttsBuffer.trim()) {
+        const {sentences} = extractSentences(state.ttsBuffer, true);
+        state.ttsBuffer = '';
+        for (const s of sentences) {
+            const clean = cleanForTTS(s);
+            if (clean.length > 2) state.ttsQueue.push(clean);
+        }
+    }
+    ttsRunGenerator();
+}
+async function ttsRunGenerator() {
+    if (state.ttsGenerating || !state.ttsEnabled) return;
+    state.ttsGenerating = true;
+    while (state.ttsQueue.length > 0 && state.ttsEnabled) {
+        const text = state.ttsQueue.shift();
+        try {
+            state.ttsAbort = new AbortController();
+            const resp = await fetch(`http://${location.hostname}:8000/v1/audio/speech`, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({text, voice:settings.vocal.ttsVoice, speed:settings.vocal.ttsSpeed}),
+                signal: state.ttsAbort.signal,
+            });
+            if (!resp.ok) continue;
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            state.ttsAudioQueue.push({url, text});
+            ttsRunPlayer();
+        } catch (e) {
+            if (e.name !== 'AbortError') console.warn('TTS fetch:', e);
+            break;
+        }
+    }
+    state.ttsGenerating = false;
+    state.ttsAbort = null;
+}
+async function ttsRunPlayer() {
+    if (state.ttsPlaying || !state.ttsEnabled) return;
+    state.ttsPlaying = true;
+    state.jarvisSpeaking = true;
+    document.body.classList.add('jarvis-speaking');
+    while ((state.ttsAudioQueue.length > 0 || state.ttsGenerating) && state.ttsEnabled) {
+        if (state.ttsAudioQueue.length === 0) { await new Promise(r => setTimeout(r, 50)); continue; }
+        const item = state.ttsAudioQueue.shift();
+        const audio = new Audio(item.url);
+        audio.crossOrigin = 'anonymous';
+        state.currentAudio = audio;
+        audio.addEventListener('play', () => {
+            try {
+                const {audioCtx:ctx, analyser:an} = ensureAudioCtx();
+                if (state.audioSourceNode) { try { state.audioSourceNode.disconnect(); } catch {} }
+                state.audioSourceNode = ctx.createMediaElementSource(audio);
+                state.audioSourceNode.connect(an);
+                an.connect(ctx.destination);
+            } catch (e) {}
+        }, {once: true});
+        try {
+            await audio.play();
+            await new Promise(resolve => { audio.onended = resolve; audio.onerror = resolve; });
+        } catch (e) {} finally {
+            try { URL.revokeObjectURL(item.url); } catch {}
+            if (state.currentAudio === audio) state.currentAudio = null;
+        }
+    }
+    state.ttsPlaying = false;
+    state.jarvisSpeaking = false;
+    document.body.classList.remove('jarvis-speaking');
+    if (state.isLive) dom.liveStatus.textContent = 'JARVIS';
+    resumeRecognitionAfterResponse();
+}
+async function speakTTS(text) {
+    if (!text || !state.ttsEnabled) return;
+    ttsStop();
+    const {sentences} = extractSentences(text + ' ', true);
+    for (const s of sentences) { const clean = cleanForTTS(s); if (clean.length > 2) state.ttsQueue.push(clean); }
+    ttsRunGenerator();
+    return new Promise(resolve => {
+        const check = () => {
+            if (!state.ttsPlaying && !state.ttsGenerating && state.ttsAudioQueue.length === 0) resolve();
+            else setTimeout(check, 100);
+        };
+        check();
+    });
+}
+function speakFromBtn(btn, text) {
+    if (state.ttsPlaying || state.ttsGenerating) {
+        ttsStop();
+        btn.classList.remove('speaking'); btn.textContent = '🔊'; return;
+    }
+    btn.classList.add('speaking'); btn.textContent = '⏹';
+    const wasEnabled = state.ttsEnabled;
+    state.ttsEnabled = true;
+    speakTTS(text).then(() => {
+        state.ttsEnabled = wasEnabled;
+        btn.classList.remove('speaking'); btn.textContent = '🔊';
+    });
+}
+
+function initRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = 'fr-FR'; r.continuous = false;
+    r.interimResults = true; r.maxAlternatives = 1;
+    return r;
+}
+function startListening(mode='oneshot') {
+    if (state.micActive) return;
+    if (!state.recognition) state.recognition = initRecognition();
+    if (!state.recognition) { showToast('Reconnaissance vocale indisponible'); return; }
+    state.interimTranscript = ''; state.finalTranscript = '';
+    state.recognition.onstart = () => {
+        state.micActive = true;
+        document.body.classList.add('user-speaking');
+        if (mode === 'continuous') {
+            dom.micBtn.classList.add('continuous');
+            dom.liveListenBtn.classList.add('active');
+            dom.liveListenBtn.textContent = '⏹ ARRÊTER L\'ÉCOUTE';
+        } else dom.micBtn.classList.add('recording');
+        dom.micBtn.textContent = '⏹';
+    };
+    state.recognition.onresult = e => {
+        let interim = '', final = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i][0].transcript;
+            if (e.results[i].isFinal) final += t;
+            else interim += t;
+        }
+        if (final) state.finalTranscript += final;
+        state.interimTranscript = interim;
+        const display = (state.finalTranscript + interim).trim();
+        dom.input.value = display;
+        if (state.isLive) dom.liveSubtitle.textContent = '🎙 ' + display + (interim ? '…' : '');
+        if (mode === 'continuous' && final) {
+            clearTimeout(state.silenceTimer);
+            const delay = (settings.vocal.silenceDelay || 1.5) * 1000;
+            state.silenceTimer = setTimeout(() => {
+                if (state.finalTranscript.trim()) {
+                    records.voiceMessages++; saveRecords(); checkAchievements();
+                    sendMessage();
+                    state.finalTranscript = '';
+                }
+            }, delay);
+        }
+    };
+    state.recognition.onend = () => {
+        state.micActive = false;
+        document.body.classList.remove('user-speaking');
+        dom.micBtn.classList.remove('recording', 'continuous');
+        dom.micBtn.textContent = '🎤';
+        if ((mode === 'oneshot' || mode === 'push-to-talk') && dom.input.value.trim()) {
+            const txt = dom.input.value.trim();
+            if (txt && (state.isLive || mode === 'push-to-talk')) {
+                records.voiceMessages++; saveRecords(); checkAchievements();
+                setTimeout(() => sendMessage(), 150);
+            }
+        }
+        if (mode === 'continuous' && state.continuousMode && !state.jarvisSpeaking) {
+            setTimeout(() => { if (state.continuousMode && !state.jarvisSpeaking) startListening('continuous'); }, 300);
+        } else if (mode === 'continuous' && !state.continuousMode) {
+            dom.liveListenBtn.classList.remove('active');
+            dom.liveListenBtn.textContent = '🎙 ACTIVER L\'ÉCOUTE';
+        }
+    };
+    state.recognition.onerror = e => {
+        if (e.error !== 'no-speech' && e.error !== 'aborted') {
+            console.warn('Speech recognition error:', e.error);
+            if (e.error === 'not-allowed') {
+                showToast('Permission micro refusée');
+                state.continuousMode = false;
+                dom.continuousToggle.checked = false;
+            }
+        }
+    };
+    try { state.recognition.start(); }
+    catch (e) {
+        try { state.recognition.stop(); } catch {}
+        setTimeout(() => { try { state.recognition.start(); } catch {} }, 100);
+    }
+}
+function stopListening() {
+    if (state.recognition && state.micActive) { try { state.recognition.stop(); } catch {} }
+    clearTimeout(state.silenceTimer);
+}
+function pauseRecognitionDuringResponse() {
+    if (state.continuousMode && state.micActive) stopListening();
+}
+function resumeRecognitionAfterResponse() {
+    if (state.continuousMode && !state.micActive && !state.jarvisSpeaking) {
+        setTimeout(() => { if (state.continuousMode && !state.jarvisSpeaking) startListening('continuous'); }, 500);
+    }
+}
+dom.continuousToggle.addEventListener('change', e => {
+    state.continuousMode = e.target.checked;
+    settings.vocal.continuousListen = state.continuousMode; saveSettings();
+    if (state.continuousMode) { showToast('ÉCOUTE CONTINUE ON'); startListening('continuous'); }
+    else { showToast('ÉCOUTE CONTINUE OFF'); stopListening(); }
+});
+function toggleContinuousListening() {
+    dom.continuousToggle.checked = !dom.continuousToggle.checked;
+    dom.continuousToggle.dispatchEvent(new Event('change'));
+}
+window.toggleContinuousListening = toggleContinuousListening;
+dom.micBtn.addEventListener('click', () => {
+    if (state.continuousMode) { showToast('Désactivez l\'écoute continue d\'abord'); return; }
+    if (state.micActive) stopListening();
+    else startListening(state.isLive ? 'continuous' : 'oneshot');
+});
+document.addEventListener('keydown', e => {
+    if (!settings.vocal.pushToTalkSpace) return;
+    if (e.code === 'Space' && document.activeElement !== dom.input && !state.spaceHeld) {
+        e.preventDefault();
+        state.spaceHeld = true;
+        if (!state.micActive && !state.continuousMode) startListening('push-to-talk');
+    }
+});
+document.addEventListener('keyup', e => {
+    if (e.code === 'Space' && state.spaceHeld) {
+        state.spaceHeld = false;
+        if (state.micActive && !state.continuousMode) stopListening();
+    }
+});
+
+let threeLoaded = false, threeScene = null, liveScene = null;
+async function loadThree() {
+    if (threeLoaded) return window.THREE;
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        s.onload = () => { threeLoaded = true; resolve(window.THREE); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+function buildSceneObjects(THREE, scene, style) {
+    const accent = ACCENT_COLORS[settings.visual.accentColor] || ACCENT_COLORS.cyan;
+    const accentHex = parseInt(accent.main.slice(1), 16);
+    const mat = new THREE.MeshBasicMaterial({color:accentHex, wireframe:true, transparent:true, opacity:0.4});
+    const pMat = new THREE.PointsMaterial({color:accentHex, size:0.05, transparent:true, opacity:0.6});
+    const result = {mainObj:null, extras:[], origPositions:null};
+    switch (style) {
+        case 'sphere': result.mainObj = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 2), mat); break;
+        case 'core':
+            result.mainObj = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 24), mat);
+            for (let i=0; i<3; i++) {
+                const r = new THREE.Mesh(new THREE.TorusGeometry(1.5+i*0.4, 0.02, 12, 60), mat);
+                r.rotation.x = Math.random()*Math.PI;
+                result.extras.push(r); scene.add(r);
+            } break;
+        case 'matrix':
+            result.mainObj = new THREE.Group();
+            for (let x=-1; x<=1; x++) for (let y=-1; y<=1; y++) for (let z=-1; z<=1; z++) {
+                const c = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), mat);
+                c.position.set(x*1.2, y*1.2, z*1.2);
+                result.mainObj.add(c);
+            } break;
+        case 'vortex': {
+            const g = new THREE.BufferGeometry();
+            const N = 600; const p = new Float32Array(N * 3);
+            for (let i=0; i<N; i++) {
+                const r = 2+Math.random()*2, a = Math.random()*Math.PI*2;
+                p[i*3] = Math.cos(a)*r; p[i*3+1] = (Math.random()-0.5)*5; p[i*3+2] = Math.sin(a)*r;
+            }
+            g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+            result.mainObj = new THREE.Points(g, pMat); break; }
+        case 'dna':
+            result.mainObj = new THREE.Group();
+            for (let i=0; i<32; i++) {
+                const a = i*0.3, y = (i-16)*0.15;
+                const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.05), mat);
+                p1.position.set(Math.cos(a), y, Math.sin(a));
+                const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.05), mat);
+                p2.position.set(Math.cos(a+Math.PI), y, Math.sin(a+Math.PI));
+                result.mainObj.add(p1); result.mainObj.add(p2);
+            } break;
+        case 'neural':
+            result.mainObj = new THREE.Group();
+            for (let i=0; i<24; i++) {
+                const n = new THREE.Mesh(new THREE.SphereGeometry(0.05), mat);
+                n.position.set((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
+                n.userData.origin = n.position.clone();
+                n.userData.phase = Math.random() * Math.PI * 2;
+                result.extras.push(n); result.mainObj.add(n);
+            } break;
+        case 'waves': {
+            const geo = new THREE.PlaneGeometry(5, 5, 16, 16);
+            result.mainObj = new THREE.Mesh(geo, mat);
+            result.mainObj.rotation.x = -Math.PI/3;
+            result.origPositions = new Float32Array(geo.attributes.position.array);
+            break; }
+        case 'rings':
+            result.mainObj = new THREE.Group();
+            for (let i=0; i<5; i++) result.mainObj.add(new THREE.Mesh(new THREE.TorusGeometry(1+i*0.5, 0.05, 8, 40), mat));
+            break;
+        case 'plasma':
+            result.mainObj = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32),
+                new THREE.MeshBasicMaterial({color:accentHex, wireframe:true, transparent:true, opacity:0.2}));
+            const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), mat);
+            result.extras.push(inner); scene.add(inner); break;
+        case 'crystal': result.mainObj = new THREE.Mesh(new THREE.OctahedronGeometry(2, 0), mat); break;
+        case 'rain':
+            result.mainObj = new THREE.Group();
+            for (let i=0; i<60; i++) {
+                const l = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.02), mat);
+                l.position.set((Math.random()-0.5)*6, Math.random()*10, (Math.random()-0.5)*4);
+                result.extras.push(l); result.mainObj.add(l);
+            } break;
+        case 'nebula': {
+            const g = new THREE.BufferGeometry();
+            const N = 1000; const p = new Float32Array(N * 3);
+            for (let i=0; i<N; i++) {
+                const t = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 2+Math.random()*0.5;
+                p[i*3] = r*Math.sin(ph)*Math.cos(t); p[i*3+1] = r*Math.sin(ph)*Math.sin(t); p[i*3+2] = r*Math.cos(ph);
+            }
+            g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+            result.mainObj = new THREE.Points(g, pMat); break; }
+        case 'city':
+            result.mainObj = new THREE.Group();
+            for (let i=0; i<40; i++) {
+                const h = Math.random()*2;
+                const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, h, 0.2), mat);
+                b.position.set((Math.random()-0.5)*6, h/2-2, (Math.random()-0.5)*6);
+                result.extras.push(b); result.mainObj.add(b);
+            } break;
+        case 'blackhole':
+            result.mainObj = new THREE.Mesh(new THREE.TorusGeometry(2, 0.01, 16, 80), mat);
+            const core = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 24),
+                new THREE.MeshBasicMaterial({color:0x000000}));
+            result.extras.push(core); scene.add(core); break;
+        default: result.mainObj = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 2), mat);
+    }
+    if (result.mainObj) scene.add(result.mainObj);
+    return result;
+}
+
+let frameCount = 0;
+function animateScene(sceneObj, t) {
+    if (!sceneObj) return;
+    const {scene, camera, renderer, mainObj, extras, style, origPositions} = sceneObj;
+    const {intensity, bass} = computeAudioMetrics();
+    if (mainObj) {
+        mainObj.rotation.y += 0.003 + intensity * 0.012;
+        mainObj.rotation.x += 0.0015 + intensity * 0.006;
+        switch (style) {
+            case 'sphere': case 'plasma': case 'crystal': {
+                const s = 1 + bass * 1.2;
+                mainObj.scale.set(s, s, s); break; }
+            case 'waves':
+                if (frameCount % 2 === 0 && origPositions) {
+                    const positions = mainObj.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i+2] = origPositions[i+2] +
+                            Math.sin(origPositions[i] * 0.8 + t * 0.0015) * (0.3 + intensity * 1.5);
+                    }
+                    mainObj.geometry.attributes.position.needsUpdate = true;
+                }
+                break;
+            case 'matrix':
+                if (frameCount % 2 === 0) {
+                    mainObj.children.forEach((c, i) => {
+                        const cs = 1 + (dataArray ? dataArray[i % dataArray.length] / 255 : 0) * 1.5;
+                        c.scale.x += (cs - c.scale.x) * 0.2;
+                        c.scale.y = c.scale.x; c.scale.z = c.scale.x;
+                    });
+                }
+                break;
+            case 'rain':
+                extras.forEach(l => {
+                    l.position.y -= 0.06 + intensity * 0.3;
+                    if (l.position.y < -5) l.position.y = 5;
+                });
+                break;
+            case 'city':
+                if (frameCount % 2 === 0) {
+                    extras.forEach((b, i) => {
+                        const target = 1 + (dataArray ? dataArray[i % dataArray.length] / 255 : 0) * 4;
+                        b.scale.y += (target - b.scale.y) * 0.2;
+                    });
+                }
+                break;
+        }
+    }
+    extras.forEach((obj, i) => {
+        if (style === 'core') {
+            obj.rotation.z += 0.01 + i * 0.005;
+            const targetScale = 1 + bass * (i+1) * 0.4;
+            obj.scale.x += (targetScale - obj.scale.x) * 0.15;
+            obj.scale.y = obj.scale.x; obj.scale.z = obj.scale.x;
+        } else if (style === 'neural') {
+            const o = obj.userData.origin, ph = obj.userData.phase;
+            obj.position.x = o.x + Math.sin(t*0.001 + ph) * 0.15 * (0.3 + intensity);
+            obj.position.y = o.y + Math.cos(t*0.0013 + ph) * 0.15 * (0.3 + intensity);
+            obj.position.z = o.z + Math.sin(t*0.0011 + ph * 1.7) * 0.15 * (0.3 + intensity);
+        }
+    });
+    renderer.render(scene, camera);
+}
+
+async function initSidebarViz() {
+    if (threeScene) return threeScene;
+    const THREE = await loadThree();
+    const c = dom.vizCanvas;
+    const w = c.offsetWidth || 240, h = c.offsetHeight || 180;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, w/h, 0.1, 1000);
+    camera.position.z = 5;
+    const renderer = new THREE.WebGLRenderer({canvas:c, alpha:true, antialias:false});
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, settings.advanced.pixelRatio || 1.5));
+    threeScene = {THREE, scene, camera, renderer, mainObj:null, extras:[], style:settings.visual.vizStyle, origPositions:null};
+    const built = buildSceneObjects(THREE, scene, threeScene.style);
+    threeScene.mainObj = built.mainObj; threeScene.extras = built.extras; threeScene.origPositions = built.origPositions;
+    return threeScene;
+}
+function rebuildSidebarViz() {
+    if (!threeScene) return;
+    const {THREE, scene} = threeScene;
+    while (scene.children.length) scene.remove(scene.children[0]);
+    threeScene.style = settings.visual.vizStyle;
+    const built = buildSceneObjects(THREE, scene, threeScene.style);
+    threeScene.mainObj = built.mainObj; threeScene.extras = built.extras; threeScene.origPositions = built.origPositions;
+}
+let mainRafId = null;
+function mainAnimLoop(t) {
+    mainRafId = requestAnimationFrame(mainAnimLoop);
+    frameCount++;
+    if (threeScene && dom.vizToggle.checked) animateScene(threeScene, t);
+    if (liveScene && state.isLive) animateScene(liveScene, t);
+}
+function startMainLoop() { if (!mainRafId) requestAnimationFrame(mainAnimLoop); }
+function stopMainLoop() { if (mainRafId) { cancelAnimationFrame(mainRafId); mainRafId = null; } }
+
+dom.vizToggle.addEventListener('change', async e => {
+    settings.visual.vizEnabled = e.target.checked; saveSettings();
+    if (e.target.checked) {
+        dom.vizContainer.style.display = 'block';
+        document.body.classList.add('no-bg-anim');
+        if (!threeScene) await initSidebarViz();
+        startMainLoop();
+    } else {
+        dom.vizContainer.style.display = 'none';
+        if (!state.isLive && settings.visual.bgAnimations) document.body.classList.remove('no-bg-anim');
+        if (!liveScene || !state.isLive) stopMainLoop();
+    }
+});
+
+async function initLiveViz() {
+    if (liveScene) return liveScene;
+    const THREE = await loadThree();
+    const c = dom.liveCanvas;
+    const w = c.offsetWidth || 600, h = c.offsetHeight || 600;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, w/h, 0.1, 1000);
+    camera.position.z = 5;
+    const renderer = new THREE.WebGLRenderer({canvas:c, alpha:true, antialias:false});
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, settings.advanced.pixelRatio || 1.5));
+    liveScene = {THREE, scene, camera, renderer, mainObj:null, extras:[], style:settings.visual.vizStyle, origPositions:null};
+    const built = buildSceneObjects(THREE, scene, liveScene.style);
+    liveScene.mainObj = built.mainObj; liveScene.extras = built.extras; liveScene.origPositions = built.origPositions;
+    return liveScene;
+}
+function rebuildLiveViz() {
+    if (!liveScene) return;
+    const {THREE, scene} = liveScene;
+    while (scene.children.length) scene.remove(scene.children[0]);
+    liveScene.style = settings.visual.vizStyle;
+    const built = buildSceneObjects(THREE, scene, liveScene.style);
+    liveScene.mainObj = built.mainObj; liveScene.extras = built.extras; liveScene.origPositions = built.origPositions;
+}
+async function toggleLive() {
+    state.isLive = !state.isLive;
+    if (state.isLive) {
+        document.body.classList.add('live-mode'); document.body.classList.add('no-bg-anim');
+        dom.liveBtn.classList.add('active');
+        if (!liveScene) await initLiveViz();
+        else {
+            requestAnimationFrame(() => {
+                const c = dom.liveCanvas;
+                liveScene.camera.aspect = c.offsetWidth / c.offsetHeight;
+                liveScene.camera.updateProjectionMatrix();
+                liveScene.renderer.setSize(c.offsetWidth, c.offsetHeight);
+            });
+        }
+        startMainLoop();
+        if (!state.ttsEnabled) { dom.ttsToggle.checked = true; state.ttsEnabled = true; }
+        dom.liveStatus.textContent = 'JARVIS';
+        dom.liveSubtitle.textContent = 'Mode immersif · Activez l\'écoute pour parler';
+        showToast('MODE LIVE');
+    } else {
+        document.body.classList.remove('live-mode');
+        if (settings.visual.bgAnimations && !dom.vizToggle.checked) document.body.classList.remove('no-bg-anim');
+        dom.liveBtn.classList.remove('active');
+        if (!dom.vizToggle.checked) stopMainLoop();
+        showToast('MODE NORMAL');
+    }
+}
+window.toggleLive = toggleLive;
+
+function ensureShellWS() {
+    if (state.shellWS && state.shellWS.readyState <= 1) return;
+    state.shellWS = new WebSocket(`ws://${location.host}/ws/shell`);
+    state.shellWS.onmessage = e => {
+        try {
+            const m = JSON.parse(e.data);
+            if (m.type === 'output') {
+                dom.terminalOut.textContent += m.data;
+                dom.terminalOut.scrollTop = dom.terminalOut.scrollHeight;
+            }
+        } catch {}
+    };
+    state.shellWS.onclose = () => { state.shellWS = null; };
+}
+
+let currentMenu = null;
+let currentSettingsTab = 'chat';
+let currentBenchTab = 'llm';
+
+function openMenu(name) {
+    currentMenu = name;
+    if (name === 'infos') renderInfos();
+    else if (name === 'settings') renderSettings();
+    else if (name === 'benchs') renderBenchs();
+    dom.menuOverlay.classList.add('show');
+}
+function closeMenu() {
+    dom.menuOverlay.classList.remove('show');
+    currentMenu = null;
+    if (state.sysStatsTimer) { clearInterval(state.sysStatsTimer); state.sysStatsTimer = null; }
+}
+window.openMenu = openMenu;
+window.closeMenu = closeMenu;
+dom.menuOverlay.addEventListener('click', e => { if (e.target === dom.menuOverlay) closeMenu(); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (currentMenu) closeMenu();
+        else if (state.isLive) toggleLive();
+    }
+});
+
+async function renderInfos() {
+    dom.menuTitle.textContent = '📊 INFORMATIONS SYSTÈME';
+    dom.menuMeta.textContent = 'Auto-refresh 5s';
+    dom.menuFooterInfo.textContent = '';
+    dom.menuFooterActions.innerHTML = `<button class="menu-btn" onclick="renderInfos()">↻ ACTUALISER</button> <button class="menu-btn primary" onclick="closeMenu()">FERMER</button>`;
+    await refreshInfosData();
+    if (state.sysStatsTimer) clearInterval(state.sysStatsTimer);
+    state.sysStatsTimer = setInterval(() => { if (currentMenu === 'infos') refreshInfosData(); }, 5000);
+}
+async function refreshInfosData() {
+    let health = {};
+    try { health = await fetch('/health').then(r => r.json()); } catch {}
+    const recoVoc = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
+    const sessionMin = Math.floor((Date.now() - state.sessionStart) / 60000);
+    let html = '<div class="infos-grid">';
+    html += `<div class="infos-section">
+        <h4>━━ ÉTAT ━━</h4>
+        <div class="infos-row success"><span>Statut serveur</span><span>● EN LIGNE</span></div>
+        <div class="infos-row"><span>Modèle actif</span><span>${dom.modelSelect.value.split('/')[1] || dom.modelSelect.value}</span></div>
+        <div class="infos-row"><span>Agent en cours</span><span>${dom.activeAgent.textContent}</span></div>
+        <div class="infos-row"><span>Session active</span><span>${sessionMin} min</span></div>
+    </div>`;
+    html += `<div class="infos-section">
+        <h4>━━ PERFORMANCE ━━</h4>
+        <div class="infos-row"><span>Messages</span><span>${state.msgCount}</span></div>
+        <div class="infos-row"><span>Latence dernière</span><span>${dom.statLatency.textContent || '—'}</span></div>
+        <div class="infos-row"><span>TTFB dernier</span><span>${dom.statTTFB.textContent || '—'}</span></div>
+        <div class="infos-row"><span>Tokens/s</span><span>${dom.statTPS.textContent || '—'}</span></div>
+    </div>`;
+    html += `<div class="infos-section">
+        <h4>━━ NAVIGATEUR ━━</h4>
+        <div class="infos-row ${recoVoc ? 'success' : 'error'}"><span>Reco vocale</span><span>${recoVoc ? '✓ Disponible' : '✗ Indisponible'}</span></div>
+        <div class="infos-row ${audioCtx ? 'success' : ''}"><span>Audio context</span><span>${audioCtx ? '✓ Actif' : '○ Inactif'}</span></div>
+        <div class="infos-row ${window.isSecureContext ? 'success' : 'warn'}"><span>Contexte sécurisé</span><span>${window.isSecureContext ? '✓ OUI' : '✗ NON'}</span></div>
+        <div class="infos-row"><span>Plateforme</span><span style="font-size:0.65rem;">${navigator.platform || 'unknown'}</span></div>
+    </div>`;
+    html += `<div class="infos-section">
+        <h4>━━ BACKEND ━━</h4>
+        <div class="infos-row"><span>Agents chargés</span><span>${(health.agents||[]).length}</span></div>
+        <div class="infos-row"><span>Historique persist.</span><span>${health.history_size || 0} msg</span></div>
+        <div class="infos-row"><span>Uptime serveur</span><span>${health.uptime ? formatDuration(health.uptime) : '—'}</span></div>
+        <div class="infos-row ${state.streamEnabled ? 'success' : 'warn'}"><span>Streaming SSE</span><span>${state.streamEnabled ? '✓ Actif' : '✗ Désactivé'}</span></div>
+    </div>`;
+    html += '</div>';
+    dom.menuBody.innerHTML = html;
+}
+function formatDuration(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m} min`;
+}
+window.renderInfos = renderInfos;
+
+function renderSettings() {
+    dom.menuTitle.textContent = '⚙️ PARAMÈTRES';
+    dom.menuMeta.textContent = '';
+    dom.menuFooterInfo.innerHTML = '<span>💾 Sauvegarde auto (localStorage)</span>';
+    dom.menuFooterActions.innerHTML = `<button class="menu-btn danger" onclick="resetSettings()">↺ RESET</button> <button class="menu-btn primary" onclick="closeMenu()">FERMER</button>`;
+    const tabs = [['chat','💬','CHAT'],['vocal','🎤','VOCAL'],['visual','🎨','VISUEL'],['agents','🤖','AGENTS'],['advanced','⚡','AVANCÉ']];
+    let html = '<div class="settings-layout"><div class="settings-tabs">';
+    for (const [id, icon, label] of tabs) {
+        const active = id === currentSettingsTab ? 'active' : '';
+        html += `<div class="settings-tab ${active}" data-tab="${id}" onclick="switchSettingsTab('${id}')">${icon} ${label}</div>`;
+    }
+    html += '</div><div class="settings-pane" id="settings-pane">' + renderSettingsPane(currentSettingsTab) + '</div></div>';
+    dom.menuBody.innerHTML = html;
+    if (currentSettingsTab === 'agents') loadAgentsList();
+}
+function switchSettingsTab(tabId) {
+    currentSettingsTab = tabId;
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    document.getElementById('settings-pane').innerHTML = renderSettingsPane(tabId);
+    if (tabId === 'agents') loadAgentsList();
+}
+window.switchSettingsTab = switchSettingsTab;
+
+function renderSettingsPane(tab) {
+    if (tab === 'chat') return `
+        <h3>PARAMÈTRES CHAT</h3>
+        <div class="setting-card">
+            <label class="s-label">MODÈLE PAR DÉFAUT</label>
+            <select class="cyber-select" onchange="updateSetting('chat.defaultModel', this.value); document.getElementById('model-select').value = this.value;">
+                ${[...dom.modelSelect.options].map(o => `<option value="${o.value}" ${settings.chat.defaultModel === o.value ? 'selected' : ''}>${o.text}</option>`).join('')}
+            </select>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <label class="s-label" style="margin:0;">LIMITE HISTORIQUE</label>
+                <span class="s-value" id="setting-hist-val">${settings.chat.historyLimit} msg</span>
+            </div>
+            <input type="range" class="s-slider" min="5" max="50" step="1" value="${settings.chat.historyLimit}" oninput="document.getElementById('setting-hist-val').textContent=this.value+' msg'; updateSetting('chat.historyLimit', parseInt(this.value));">
+        </div>
+        <div class="setting-card">
+            <label class="s-label">STYLE DE RÉPONSE</label>
+            <div class="radio-group">
+                ${['concise','balanced','detailed'].map(v => `<div class="radio-opt ${settings.chat.responseStyle===v?'active':''}" onclick="updateSetting('chat.responseStyle','${v}'); renderSettings()">${v.toUpperCase()}</div>`).join('')}
+            </div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem;">⚡ Streaming SSE temps réel</div><div class="s-desc">Affichage token-par-token (recommandé)</div></div>
+                <label class="toggle"><input type="checkbox" ${settings.chat.streaming?'checked':''} onchange="updateSetting('chat.streaming', this.checked); document.getElementById('stream-toggle').checked = this.checked; state.streamEnabled = this.checked;"><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem;">🌐 Langue forcée</div><div class="s-desc">Auto = JARVIS détecte</div></div>
+                <select class="cyber-select" style="width:auto;" onchange="updateSetting('chat.forcedLanguage', this.value)">
+                    <option value="auto" ${settings.chat.forcedLanguage==='auto'?'selected':''}>AUTO</option>
+                    <option value="fr" ${settings.chat.forcedLanguage==='fr'?'selected':''}>FRANÇAIS</option>
+                    <option value="en" ${settings.chat.forcedLanguage==='en'?'selected':''}>ENGLISH</option>
+                </select>
+            </div>
+        </div>`;
+    if (tab === 'vocal') return `
+        <h3>PARAMÈTRES VOCAUX</h3>
+        <div class="setting-card">
+            <div class="setting-row">
+                <label class="s-label" style="margin:0;">VITESSE TTS</label>
+                <span class="s-value" id="setting-tts-speed">${settings.vocal.ttsSpeed.toFixed(2)}x</span>
+            </div>
+            <input type="range" class="s-slider" min="0.7" max="1.5" step="0.05" value="${settings.vocal.ttsSpeed}" oninput="document.getElementById('setting-tts-speed').textContent=parseFloat(this.value).toFixed(2)+'x'; updateSetting('vocal.ttsSpeed', parseFloat(this.value));">
+        </div>
+        <div class="setting-card">
+            <label class="s-label">VOIX KOKORO</label>
+            <select class="cyber-select" onchange="updateSetting('vocal.ttsVoice', this.value)">
+                <option value="ff_siwis" ${settings.vocal.ttsVoice==='ff_siwis'?'selected':''}>ff_siwis (féminine FR)</option>
+                <option value="fm_default" ${settings.vocal.ttsVoice==='fm_default'?'selected':''}>fm_default (masculine FR)</option>
+            </select>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <label class="s-label" style="margin:0;">SILENCE AVANT ENVOI</label>
+                <span class="s-value" id="setting-silence">${settings.vocal.silenceDelay.toFixed(1)}s</span>
+            </div>
+            <input type="range" class="s-slider" min="0.5" max="3" step="0.1" value="${settings.vocal.silenceDelay}" oninput="document.getElementById('setting-silence').textContent=parseFloat(this.value).toFixed(1)+'s'; updateSetting('vocal.silenceDelay', parseFloat(this.value));">
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem;">🔊 TTS automatique</div><div class="s-desc">Lecture vocale des réponses</div></div>
+                <label class="toggle"><input type="checkbox" ${settings.vocal.ttsEnabled?'checked':''} onchange="updateSetting('vocal.ttsEnabled', this.checked); document.getElementById('tts-toggle').checked = this.checked; state.ttsEnabled = this.checked;"><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem;">🎙 Écoute continue</div><div class="s-desc">Auto-restart après chaque phrase</div></div>
+                <label class="toggle"><input type="checkbox" ${settings.vocal.continuousListen?'checked':''} onchange="updateSetting('vocal.continuousListen', this.checked); document.getElementById('continuous-toggle').checked = this.checked; document.getElementById('continuous-toggle').dispatchEvent(new Event('change'));"><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem; color:var(--amber);">⚡ Barge-in (interrompre JARVIS)</div><div class="s-desc">Couper TTS si je parle</div></div>
+                <label class="toggle"><input type="checkbox" ${settings.vocal.bargeIn?'checked':''} onchange="updateSetting('vocal.bargeIn', this.checked)"><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <div><div style="font-size:0.85rem;">⌨️ Push-to-talk (Espace)</div><div class="s-desc">Maintenir Espace pour parler</div></div>
+                <label class="toggle"><input type="checkbox" ${settings.vocal.pushToTalkSpace?'checked':''} onchange="updateSetting('vocal.pushToTalkSpace', this.checked)"><span class="toggle-slider"></span></label>
+            </div>
+        </div>`;
+        if (tab === 'visual') {
+        const colorSwatches = Object.entries(ACCENT_COLORS).map(([name, c]) =>
+            `<div class="color-swatch ${settings.visual.accentColor===name?'active':''}" style="background:${c.main};color:${c.main};" onclick="updateSetting('visual.accentColor','${name}'); applySettings(); rebuildSidebarViz(); rebuildLiveViz(); renderSettings();"></div>`
+        ).join('');
+        const bgMap = {
+    'black': '#000000',
+    'space': '#05070a',
+    'abyssal': '#080a09',
+    'dark': '#0a0a0c',
+    'void_blue': '#02040a',
+    'dark_petrol': '#050a0a',
+    'obsidian': '#080808',
+    'midnight_purple': '#0a0510',
+    'deep_forest': '#040806'
+};
+        // 1. DÉFINITION DES COULEURS DE FOND (Dictionnaire de clés)
+        const bgColors = [
+            { id: 'black',   hex: '#000000', label: 'OLED Black' },
+            { id: 'space',   hex: '#05070a', label: 'Deep Space' },
+            { id: 'abyssal', hex: '#080a09', label: 'Abyssal' },
+            { id: 'dark',    hex: '#0a0a0c', label: 'Dark' },
+            { id: 'void_blue',   hex: '#02040a', label: 'Void_Blue' },
+            { id: 'dark_petrol',    hex: '#050a0a', label: 'Dark_Petrol' },
+            { id: 'obsidian',   hex: '#080808', label: 'Obsidian' },
+            { id: 'midnight_purple', hex: '#0a0510', label: 'Midnight Purple' },
+            { id: 'deep_forest',    hex: '#040806', dim:'rgba(0,200,255,0.1)',  glow:'0 0 20px rgba(0,200,255,0.4)',  borderHi:'rgba(0,200,255,0.5)',  border:'rgba(0,200,255,0.15)', label: 'Deep Forest' }
+        ];
+// 3. INTERFACE (Le fameux Stark Navy est ici)
+    const uiMap = {
+        'slate': '#12141d',
+        'tactical': '#1c1c1c',
+        'blue': '#04132e',  // Ton Stark Navy
+        'carbon': '#171717',
+        'wine': '#2d1b33',
+        'forest': '#1b2d2a',
+        'bronze': '#33251b',
+        'titanium': '#1a1a1a',
+        'cobalt': '#10141f',
+        'carbon_fiber': '#141414',
+        'deep_maroon': '#221010',
+        'gunmetal': '#252a34',
+        'emerald_ui': '#0a1a14',
+        'bismuth': '#1b1422',
+        'stealth': '#121212'
+    };
+
+// 2. DÉFINITION DES COULEURS INTERFACE (Liste pour le menu)
+const uiColors = [
+    { id: 'slate',        hex: '#12141d', label: 'Cyber Slate' },
+    { id: 'tactical',     hex: '#1c1c1c', label: 'Tactical' },
+    { id: 'blue',         hex: '#04132e', label: 'Stark Navy' },
+    { id: 'carbon',       hex: '#171717', label: 'Carbon' },
+    { id: 'wine',         hex: '#2d1b33', label: 'Neural Wine' },
+    { id: 'forest',       hex: '#1b2d2a', label: 'Forest Lab' },
+    { id: 'bronze',       hex: '#33251b', label: 'Ancient Bronze' },
+    { id: 'titanium',     hex: '#1a1a1a', label: 'Titanium' },
+    { id: 'cobalt',       hex: '#10141f', label: 'Cobalt Steel' },
+    { id: 'carbon_fiber', hex: '#141414', label: 'Carbon Fiber' },
+    { id: 'deep_maroon',  hex: '#221010', label: 'Deep Maroon' },
+    { id: 'gunmetal',     hex: '#252a34', label: 'Gunmetal' },
+    { id: 'emerald_ui',   hex: '#0a1a14', label: 'Emerald Lab' },
+    { id: 'bismuth',      hex: '#1b1422', label: 'Bismuth' },
+    { id: 'stealth',      hex: '#121212', label: 'Stealth Black' }
+];
+
+        const vizStyles = ['sphere','core','matrix','vortex','dna','neural','waves','rings','plasma','crystal','rain','nebula','city','blackhole'];
+        
+        return `
+            <h3>APPARENCE</h3>
+            <div class="setting-card">
+                <label class="s-label">COULEUR D'ACCENT</label>
+                <div class="color-swatches">${colorSwatches}</div>
+            </div>
+
+            <div class="setting-card" id="bg-color-final">
+                <label class="s-label">COULEUR DE FOND</label>
+                <div class="color-swatches">
+                    ${bgColors.map(c => `
+                        <div class="color-swatch ${settings.visual.bgColor === c.id ? 'active' : ''}" 
+                             style="background:${c.hex};" 
+                             title="${c.label}"
+                             onclick="updateSetting('visual.bgColor','${c.id}'); applySettings(); renderSettings();">
+                        </div>`).join('')}
+                </div>
+            </div>
+
+            <div class="setting-card" id="ui-color-final">
+                <label class="s-label">COULEUR INTERFACE</label>
+                <div class="color-swatches">
+                    ${uiColors.map(c => `
+                        <div class="color-swatch ${settings.visual.uiColor === c.id ? 'active' : ''}" 
+                             style="background:${c.hex};" 
+                             title="${c.label}"
+                             onclick="updateSetting('visual.uiColor','${c.id}'); applySettings(); renderSettings();">
+                        </div>`).join('')}
+                </div>
+            </div>
+            <div class="setting-card">
+                <label class="s-label">THEME PREDEFINIS 3D</label>
+                <select class="cyber-select" onchange="updateSetting('visual.vizStyle', this.value); rebuildSidebarViz(); rebuildLiveViz();">
+                    ${vizStyles.map(v => `<option value="${v}" ${settings.visual.vizStyle===v?'selected':''}>${v}</option>`).join('')}
+                </select>
+            </div>
+            <div class="setting-card">
+                <label class="s-label">STYLE VISUALIZER 3D</label>
+                <select class="cyber-select" onchange="updateSetting('visual.vizStyle', this.value); rebuildSidebarViz(); rebuildLiveViz();">
+                    ${vizStyles.map(v => `<option value="${v}" ${settings.visual.vizStyle===v?'selected':''}>${v}</option>`).join('')}
+                </select>
+            </div>
+            <div class="setting-card">
+                <label class="s-label">DENSITÉ INTERFACE</label>
+                <div class="radio-group">
+                    ${['compact','normal','spacious'].map(v => `<div class="radio-opt ${settings.visual.density===v?'active':''}" onclick="updateSetting('visual.density','${v}'); renderSettings()">${v.toUpperCase()}</div>`).join('')}
+                </div>
+            </div>
+            <div class="setting-card">
+                <div class="setting-row">
+                    <div><div style="font-size:0.85rem;">✨ Mode fluide (lissage)</div><div class="s-desc">Animations plus douces</div></div>
+                    <label class="toggle"><input type="checkbox" ${settings.visual.smoothMode?'checked':''} onchange="updateSetting('visual.smoothMode', this.checked); state.smoothMode = this.checked;"><span class="toggle-slider"></span></label>
+                </div>
+            </div>
+            <div class="setting-card">
+                <div class="setting-row">
+                    <div><div style="font-size:0.85rem;">🎬 Animations de fond</div><div class="s-desc">Grille animée et particules</div></div>
+                    <label class="toggle"><input type="checkbox" ${settings.visual.bgAnimations?'checked':''} onchange="updateSetting('visual.bgAnimations', this.checked); applySettings();"><span class="toggle-slider"></span></label>
+                </div>
+            </div>`;
+    }
+    if (tab === 'agents') return `
+        <h3>CONFIGURATION AGENTS</h3>
+        <div id="agents-list-container">
+            <div class="bench-running"><div class="spinner"></div> Chargement des agents...</div>
+        </div>`;
+    if (tab === 'advanced') return `
+        <h3>AVANCÉ · DÉVELOPPEUR</h3>
+        <div class="setting-card">
+            <div class="setting-row">
+                <label class="s-label" style="margin:0;">PIXEL RATIO VIZ</label>
+                <span class="s-value" id="setting-pr">${settings.advanced.pixelRatio.toFixed(1)}x</span>
+            </div>
+            <input type="range" class="s-slider" min="1" max="2" step="0.1" value="${settings.advanced.pixelRatio}" oninput="document.getElementById('setting-pr').textContent=parseFloat(this.value).toFixed(1)+'x'; updateSetting('advanced.pixelRatio', parseFloat(this.value));">
+            <div class="s-desc">Plus bas = plus fluide, moins net</div>
+        </div>
+        <div class="setting-card">
+            <div class="setting-row">
+                <label class="s-label" style="margin:0;">TIMEOUT REQUÊTES</label>
+                <span class="s-value" id="setting-to">${settings.advanced.timeoutSeconds}s</span>
+            </div>
+            <input type="range" class="s-slider" min="30" max="300" step="10" value="${settings.advanced.timeoutSeconds}" oninput="document.getElementById('setting-to').textContent=this.value+'s'; updateSetting('advanced.timeoutSeconds', parseInt(this.value));">
+        </div>
+        <div class="setting-card" style="background:rgba(255,68,102,0.06); border-color:rgba(255,68,102,0.3);">
+            <button class="menu-btn danger" style="width:100%;" onclick="if(confirm('Vider tout le cache localStorage ?')) { localStorage.clear(); location.reload(); }">🗑 VIDER LE CACHE NAVIGATEUR</button>
+        </div>
+        <div class="setting-card" style="background:rgba(255,68,102,0.06); border-color:rgba(255,68,102,0.3);">
+            <button class="menu-btn danger" style="width:100%;" onclick="resetSettings()">↺ RÉINITIALISER TOUS LES PARAMÈTRES</button>
+        </div>`;
+    return '';
+}
+function updateSetting(path, value) {
+    const parts = path.split('.');
+    let obj = settings;
+    for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+    obj[parts[parts.length - 1]] = value;
+    saveSettings();
+}
+window.updateSetting = updateSetting;
+function resetSettings() {
+    if (!confirm('Réinitialiser tous les paramètres ?')) return;
+    settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    saveSettings(); applySettings();
+    if (currentMenu === 'settings') renderSettings();
+    showToast('PARAMÈTRES RESET');
+}
+window.resetSettings = resetSettings;
+window.renderSettings = renderSettings;
+
+async function loadAgentsList() {
+    const container = document.getElementById('agents-list-container');
+    if (!container) return;
+    try {
+        const data = await fetch('/api/agents').then(r => r.json());
+        let html = '<div class="agents-list-settings">';
+        for (const a of data.agents) {
+            const skillsStr = a.skills.length ? a.skills.join(', ') : 'aucun';
+            html += `<div class="agent-card-settings">
+                <div class="agent-head">
+                    <div>
+                        <div class="agent-title">🤖 ${a.name}</div>
+                        <div class="agent-sub">${a.description}</div>
+                    </div>
+                    <span style="font-size:0.7rem; color:var(--green); font-family:'Share Tech Mono',monospace;">● ACTIF</span>
+                </div>
+                <div class="agent-meta">
+                    <div><span>Modèle:</span> <span>${a.model.split('/')[1] || a.model}</span></div>
+                    <div><span>Limite hist:</span> <span>${a.history_limit}</span></div>
+                </div>
+                <div style="font-size:0.7rem; margin-top:6px;"><span style="color:var(--text-dim);">Skills:</span> <span style="color:var(--accent);">${skillsStr}</span></div>
+                <details style="margin-top:8px;">
+                    <summary style="font-size:0.7rem; color:var(--text-dim); cursor:pointer; font-family:'Share Tech Mono',monospace; letter-spacing:0.1em;">▸ VOIR PROMPT SYSTÈME</summary>
+                    <pre style="font-size:0.65rem; color:var(--text); background:rgba(0,0,0,0.3); padding:8px; margin-top:6px; border-radius:4px; white-space:pre-wrap; max-height:120px; overflow-y:auto;">${escapeHtml(a.system_prompt_preview)}...</pre>
+                </details>
+            </div>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--red); padding:20px; text-align:center;">⚠ Impossible de charger les agents : ${e.message}</div>`;
+    }
+}
+
+function renderBenchs() {
+    dom.menuTitle.textContent = '🚀 CENTRE DE TESTS';
+    dom.menuMeta.textContent = '';
+    dom.menuFooterInfo.innerHTML = `<span>📈 ${records.benchmarksRun} benchs · ${records.modelsTested} modèles testés</span>`;
+    dom.menuFooterActions.innerHTML = `<button class="menu-btn primary" onclick="closeMenu()">FERMER</button>`;
+    const tabs = [['llm','⚡','VITESSE LLM'],['agents','🎯','AGENTS'],['adapt','🧠','ADAPTATION'],['system','🖥','SYSTÈME'],['records','🏆','RECORDS']];
+    let html = '<div class="bench-tabs">';
+    for (const [id, icon, label] of tabs) {
+        const active = id === currentBenchTab ? 'active' : '';
+        html += `<div class="bench-tab ${active}" data-btab="${id}" onclick="switchBenchTab('${id}')"><div class="bench-tab-icon">${icon}</div><div class="bench-tab-label">${label}</div></div>`;
+    }
+    html += '</div><div class="bench-pane" id="bench-pane">' + renderBenchPane(currentBenchTab) + '</div>';
+    dom.menuBody.innerHTML = html;
+    if (currentBenchTab === 'system') startSysStatsLoop();
+}
+function switchBenchTab(tabId) {
+    currentBenchTab = tabId;
+    document.querySelectorAll('.bench-tab').forEach(t => t.classList.toggle('active', t.dataset.btab === tabId));
+    document.getElementById('bench-pane').innerHTML = renderBenchPane(tabId);
+    if (state.sysStatsTimer) { clearInterval(state.sysStatsTimer); state.sysStatsTimer = null; }
+    if (tabId === 'system') startSysStatsLoop();
+}
+window.switchBenchTab = switchBenchTab;
+window.renderBenchs = renderBenchs;
+
+function renderBenchPane(tab) {
+    if (tab === 'llm') return renderBenchLLM();
+    if (tab === 'agents') return renderBenchAgents();
+    if (tab === 'adapt') return renderBenchAdapt();
+    if (tab === 'system') return renderBenchSystem();
+    if (tab === 'records') return renderBenchRecords();
+    return '';
+}
+
+function renderBenchLLM() {
+    const allModels = [...dom.modelSelect.options].map(o => ({value: o.value, label: o.text}));
+    const checkboxes = allModels.map(m => {
+        const checked = state.selectedBenchModels.includes(m.value);
+        return `<label class="model-cb ${checked?'checked':''}" data-mvalue="${m.value}" onclick="toggleBenchModel('${m.value}', this)"><span style="font-family:monospace;">${checked ? '☑' : '☐'}</span><span>${m.label}</span></label>`;
+    }).join('');
+    return `
+        <div class="bench-section">
+            <div class="bench-section-title">PROMPT DE TEST</div>
+            <input type="text" class="bench-input" id="bench-prompt" value="Explique-moi le fonctionnement d'un transformer en 80 mots.">
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+                <span class="model-cb" onclick="document.getElementById('bench-prompt').value='Bonjour. Comment vas-tu ?'" style="cursor:pointer; font-size:0.65rem;">+ COURT</span>
+                <span class="model-cb" onclick="document.getElementById('bench-prompt').value='Rédige un essai de 500 mots sur l\\'impact de l\\'IA sur la société.'" style="cursor:pointer; font-size:0.65rem;">+ LONG</span>
+                <span class="model-cb" onclick="document.getElementById('bench-prompt').value='Écris une fonction Python qui retourne les nombres premiers jusqu\\'à N.'" style="cursor:pointer; font-size:0.65rem;">+ CODE</span>
+                <span class="model-cb" onclick="document.getElementById('bench-prompt').value='Si Alice a 3 sœurs et 2 frères, combien de sœurs a chaque frère ?'" style="cursor:pointer; font-size:0.65rem;">+ LOGIQUE</span>
+            </div>
+        </div>
+        <div class="bench-section">
+            <div class="bench-section-title" id="bench-models-title">MODÈLES À TESTER · ${state.selectedBenchModels.length} sélectionnés</div>
+            <div class="model-checkbox-grid">${checkboxes}</div>
+            <button class="run-bench-btn" id="run-llm-bench" onclick="runLLMBench()">▶ LANCER LE TEST</button>
+        </div>
+        <div class="bench-section" id="bench-llm-results">
+            <div class="bench-section-title">RÉSULTATS</div>
+            <div style="color:var(--text-dim); padding:20px; text-align:center; font-size:0.8rem;">Cliquez sur "Lancer le test" pour démarrer</div>
+        </div>`;
+}
+function toggleBenchModel(model, el) {
+    const i = state.selectedBenchModels.indexOf(model);
+    if (i >= 0) state.selectedBenchModels.splice(i, 1);
+    else state.selectedBenchModels.push(model);
+    el.classList.toggle('checked');
+    el.querySelector('span').textContent = state.selectedBenchModels.includes(model) ? '☑' : '☐';
+    const title = document.getElementById('bench-models-title');
+    if (title) title.textContent = `MODÈLES À TESTER · ${state.selectedBenchModels.length} sélectionnés`;
+}
+window.toggleBenchModel = toggleBenchModel;
+
+async function runLLMBench() {
+    if (state.benchRunning) return;
+    if (state.selectedBenchModels.length === 0) { showToast('Sélectionnez au moins un modèle'); return; }
+    const prompt = document.getElementById('bench-prompt').value.trim();
+    if (!prompt) { showToast('Prompt vide'); return; }
+    state.benchRunning = true;
+    const btn = document.getElementById('run-llm-bench');
+    btn.disabled = true; btn.textContent = '⏳ TEST EN COURS…';
+    const resultsDiv = document.getElementById('bench-llm-results');
+    resultsDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div>`;
+    for (const model of state.selectedBenchModels) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'bench-result a';
+        placeholder.innerHTML = `<div class="bench-result-row"><div class="bench-grade">…</div><div class="bench-result-info"><div class="name">${model.split('/')[1] || model}</div><div class="stats"><span class="bench-running"><span class="spinner"></span> Test en cours…</span></div></div></div>`;
+        resultsDiv.appendChild(placeholder);
+        try {
+            const r = await fetch('/api/benchmark/llm', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({model, prompt}),
+            }).then(r => r.json());
+            const grade = (r.grade || 'F').toLowerCase();
+            const cls = ['s','a','b'].includes(grade) ? grade : 'c';
+            placeholder.className = 'bench-result ' + cls;
+            if (r.error) {
+                placeholder.innerHTML = `<div class="bench-result-row"><div class="bench-grade">F</div><div class="bench-result-info"><div class="name">${model.split('/')[1] || model}</div><div class="stats" style="color:var(--red);">⚠ ${escapeHtml(r.error.slice(0,80))}</div></div></div>`;
+            } else {
+                placeholder.innerHTML = `<div class="bench-result-row">
+                    <div class="bench-grade">${r.grade}</div>
+                    <div class="bench-result-info">
+                        <div class="name">${model.split('/')[1] || model}</div>
+                        <div class="stats">${r.ttfb_ms}ms TTFB · ${r.tokens_per_second} tok/s · ${r.total_seconds}s · ${r.token_count} tokens</div>
+                    </div>
+                    <div class="bench-result-bar">
+                        <div class="bar-track"><div class="bar-fill" style="width:${r.score}%"></div></div>
+                        <div class="bar-score">SCORE: ${r.score}/100</div>
+                    </div>
+                </div>`;
+                recordBenchResult(model, r.ttfb_ms, r.tokens_per_second, r.score, r.grade);
+            }
+        } catch (e) {
+            placeholder.className = 'bench-result f';
+            placeholder.innerHTML = `<div class="bench-result-row"><div class="bench-grade">F</div><div class="bench-result-info"><div class="name">${model.split('/')[1] || model}</div><div class="stats" style="color:var(--red);">⚠ ${e.message}</div></div></div>`;
+        }
+    }
+    btn.disabled = false; btn.textContent = '▶ RELANCER LE TEST';
+    state.benchRunning = false;
+    if (currentMenu === 'benchs') {
+        dom.menuFooterInfo.innerHTML = `<span>📈 ${records.benchmarksRun} benchs · ${records.modelsTested} modèles testés</span>`;
+    }
+}
+window.runLLMBench = runLLMBench;
+
+function renderBenchAgents() {
+    const agentsHTML = [...document.querySelectorAll('.agent-card')].map(c => `<option value="${c.dataset.agent}">${c.dataset.agent}</option>`).join('');
+    return `
+        <div class="bench-section">
+            <div class="bench-section-title">TESTS D'EFFICACITÉ AGENTS</div>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin-bottom:10px; line-height:1.5;">Évaluation auto sur 5 critères : exactitude, vitesse, autonomie, gestion d'erreur, format.</p>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                <label style="font-size:0.7rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace;">AGENT:</label>
+                <select class="cyber-select" id="bench-agent-select" style="flex:1;">${agentsHTML}</select>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+                <button class="run-bench-btn" style="margin:0; padding:8px; font-size:0.7rem;" onclick="runAgentBench('shell')">SHELL TEST</button>
+                <button class="run-bench-btn" style="margin:0; padding:8px; font-size:0.7rem;" onclick="runAgentBench('code')">CODE TEST</button>
+                <button class="run-bench-btn" style="margin:0; padding:8px; font-size:0.7rem;" onclick="runAgentBench('search')">SEARCH TEST</button>
+            </div>
+        </div>
+        <div class="bench-section" id="bench-agent-result">
+            <div class="bench-section-title">RÉSULTATS</div>
+            <div style="color:var(--text-dim); padding:20px; text-align:center; font-size:0.8rem;">Sélectionnez un agent et un type de test</div>
+        </div>`;
+}
+async function runAgentBench(taskType) {
+    if (state.benchRunning) return;
+    const agent = document.getElementById('bench-agent-select').value;
+    state.benchRunning = true;
+    const resultDiv = document.getElementById('bench-agent-result');
+    resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div><div class="bench-running" style="padding:20px; justify-content:center;"><div class="spinner"></div> Test ${agent} sur "${taskType}" en cours…</div>`;
+    try {
+        const r = await fetch('/api/benchmark/agent', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({agent, task_type:taskType}),
+        }).then(r => r.json());
+        if (r.error) {
+            resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div><div style="color:var(--red); padding:20px; text-align:center;">⚠ ${escapeHtml(r.error)}</div>`;
+        } else {
+            const m = r.metrics || {};
+            const axes = ['exactitude','vitesse','autonomie','gestion_erreur','format'];
+            const labels = ['EXACT','VITESSE','AUTO','ERREUR','FORMAT'];
+            const cx = 100, cy = 100, R = 80;
+            const angles = axes.map((_, i) => -Math.PI/2 + (i / axes.length) * Math.PI*2);
+            const points = axes.map((a, i) => {
+                const v = (m[a] || 0) / 100;
+                const x = cx + Math.cos(angles[i]) * R * v;
+                const y = cy + Math.sin(angles[i]) * R * v;
+                return `${x},${y}`;
+            }).join(' ');
+            const grade = (r.grade || 'F').toLowerCase();
+            const cls = ['s','a','b'].includes(grade) ? grade : 'c';
+            const accent = ACCENT_COLORS[settings.visual.accentColor].main;
+            resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div>
+                <div class="bench-result ${cls}">
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <div style="flex-shrink:0;">
+                            <svg width="200" height="200" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(0,200,255,0.1)" stroke-width="1"/>
+                                <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(0,200,255,0.1)" stroke-width="1"/>
+                                <circle cx="100" cy="100" r="40" fill="none" stroke="rgba(0,200,255,0.1)" stroke-width="1"/>
+                                <circle cx="100" cy="100" r="20" fill="none" stroke="rgba(0,200,255,0.1)" stroke-width="1"/>
+                                ${axes.map((_, i) => { const x = cx + Math.cos(angles[i]) * R; const y = cy + Math.sin(angles[i]) * R; return `<line x1="100" y1="100" x2="${x}" y2="${y}" stroke="rgba(0,200,255,0.15)"/>`; }).join('')}
+                                <polygon points="${points}" fill="${accent}33" stroke="${accent}" stroke-width="2"/>
+                                ${axes.map((_, i) => { const x = cx + Math.cos(angles[i]) * (R+15); const y = cy + Math.sin(angles[i]) * (R+15); return `<text x="${x}" y="${y}" text-anchor="middle" fill="rgba(184,212,240,0.7)" font-family="Share Tech Mono" font-size="9" dominant-baseline="middle">${labels[i]}</text>`; }).join('')}
+                            </svg>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-family:'Orbitron',monospace; font-size:1.2rem; color:var(--accent); margin-bottom:4px;">${r.agent} · ${r.grade}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace; margin-bottom:10px;">Score global: ${r.score}/100 · ${r.total_seconds}s · ${r.response_length} chars</div>
+                            <div style="font-size:0.75rem; line-height:1.7;">
+                                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Exactitude</span><span style="color:var(--accent);">${m.exactitude||0}/100</span></div>
+                                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Vitesse</span><span style="color:var(--accent);">${m.vitesse||0}/100</span></div>
+                                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Autonomie</span><span style="color:var(--accent);">${m.autonomie||0}/100</span></div>
+                                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Gestion erreur</span><span style="color:var(--accent);">${m.gestion_erreur||0}/100</span></div>
+                                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Format</span><span style="color:var(--accent);">${m.format||0}/100</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <details style="margin-top:10px;">
+                        <summary style="font-size:0.7rem; color:var(--text-dim); cursor:pointer; font-family:'Share Tech Mono',monospace;">▸ APERÇU RÉPONSE</summary>
+                        <pre style="font-size:0.7rem; background:rgba(0,0,0,0.3); padding:8px; margin-top:6px; border-radius:4px; white-space:pre-wrap; max-height:120px; overflow-y:auto; color:var(--text);">${escapeHtml(r.response_preview || '')}…</pre>
+                    </details>
+                </div>`;
+            recordAgentResult(r.agent, r.score);
+        }
+    } catch (e) {
+        resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div><div style="color:var(--red); padding:20px; text-align:center;">⚠ ${e.message}</div>`;
+    } finally { state.benchRunning = false; }
+}
+window.runAgentBench = runAgentBench;
+
+function renderBenchAdapt() {
+    return `
+        <div class="bench-section">
+            <div class="bench-section-title">TESTS D'ADAPTATION</div>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin-bottom:12px; line-height:1.6;">Vérifie comment le modèle gère les cas tordus : prompts ambigus, langues mixtes, contraintes strictes, raisonnement multi-étapes.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div class="model-cb" style="display:block; cursor:pointer; padding:12px;" onclick="runAdaptTest('ambiguity')"><div style="font-size:0.85rem; color:var(--accent); margin-bottom:4px;">🧩 Ambiguïté</div><div style="font-size:0.7rem; color:var(--text-dim);">Demande de clarification ?</div></div>
+                <div class="model-cb" style="display:block; cursor:pointer; padding:12px;" onclick="runAdaptTest('multilingual')"><div style="font-size:0.85rem; color:var(--accent); margin-bottom:4px;">🌐 Multilingue</div><div style="font-size:0.7rem; color:var(--text-dim);">FR/EN dans la même question</div></div>
+                <div class="model-cb" style="display:block; cursor:pointer; padding:12px;" onclick="runAdaptTest('format')"><div style="font-size:0.85rem; color:var(--accent); margin-bottom:4px;">📋 Format</div><div style="font-size:0.7rem; color:var(--text-dim);">Respect contraintes JSON/longueur</div></div>
+                <div class="model-cb" style="display:block; cursor:pointer; padding:12px;" onclick="runAdaptTest('logic')"><div style="font-size:0.85rem; color:var(--accent); margin-bottom:4px;">💡 Logique</div><div style="font-size:0.7rem; color:var(--text-dim);">Énigmes, raisonnement multi-étapes</div></div>
+            </div>
+        </div>
+        <div class="bench-section" id="bench-adapt-result">
+            <div class="bench-section-title">RÉSULTATS</div>
+            <div style="color:var(--text-dim); padding:20px; text-align:center; font-size:0.8rem;">Cliquez sur un type de test pour démarrer</div>
+        </div>`;
+}
+const ADAPT_PROMPTS = {
+    ambiguity: { prompt:"Aide-moi avec ça.", expect:"Devrait demander des précisions" },
+    multilingual: { prompt:"Hi! Peux-tu me give un summary de quantum entanglement en français mais avec les technical terms en English ?", expect:"Devrait gérer le mix FR/EN proprement" },
+    format: { prompt:"Liste exactement 3 fruits, en JSON pur, sans aucun texte autour. Format: {\"fruits\":[\"...\",\"...\",\"...\"]}", expect:"Devrait retourner du JSON valide sans préambule" },
+    logic: { prompt:"Si Alice a 3 sœurs et 2 frères, combien de sœurs a chaque frère d'Alice ?", expect:"Réponse : 4 sœurs" },
+};
+async function runAdaptTest(type) {
+    if (state.benchRunning) return;
+    const cfg = ADAPT_PROMPTS[type];
+    if (!cfg) return;
+    state.benchRunning = true;
+    const resultDiv = document.getElementById('bench-adapt-result');
+    resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS · ${type.toUpperCase()}</div><div class="bench-running" style="padding:20px; justify-content:center;"><div class="spinner"></div> Test en cours sur ${dom.modelSelect.value.split('/')[1]}…</div>`;
+    try {
+        const r = await fetch('/api/benchmark/llm', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({model: dom.modelSelect.value, prompt: cfg.prompt}),
+        }).then(r => r.json());
+        if (r.error) {
+            resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div><div style="color:var(--red); padding:20px; text-align:center;">⚠ ${escapeHtml(r.error)}</div>`;
+        } else {
+            const grade = (r.grade || 'F').toLowerCase();
+            const cls = ['s','a','b'].includes(grade) ? grade : 'c';
+            resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS · ${type.toUpperCase()}</div>
+                <div class="bench-result ${cls}">
+                    <div class="bench-result-row">
+                        <div class="bench-grade">${r.grade}</div>
+                        <div class="bench-result-info"><div class="name">${dom.modelSelect.value.split('/')[1]}</div><div class="stats">${r.total_seconds}s · ${r.token_count} tokens</div></div>
+                        <div class="bench-result-bar"><div class="bar-track"><div class="bar-fill" style="width:${r.score}%"></div></div><div class="bar-score">${r.score}/100</div></div>
+                    </div>
+                </div>
+                <div style="margin-top:10px;">
+                    <div style="font-size:0.7rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace; margin-bottom:4px;">PROMPT</div>
+                    <pre style="font-size:0.75rem; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px; white-space:pre-wrap; color:var(--text);">${escapeHtml(cfg.prompt)}</pre>
+                    <div style="font-size:0.7rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace; margin:8px 0 4px;">RÉPONSE (aperçu)</div>
+                    <pre style="font-size:0.75rem; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px; white-space:pre-wrap; max-height:140px; overflow-y:auto; color:var(--text);">${escapeHtml(r.preview || '')}…</pre>
+                    <div style="font-size:0.7rem; color:var(--amber); margin-top:6px;">💡 Critère : ${cfg.expect}</div>
+                </div>`;
+        }
+    } catch (e) {
+        resultDiv.innerHTML = `<div class="bench-section-title">RÉSULTATS</div><div style="color:var(--red); padding:20px; text-align:center;">⚠ ${e.message}</div>`;
+    } finally { state.benchRunning = false; }
+}
+window.runAdaptTest = runAdaptTest;
+
+function renderBenchSystem() {
+    return `
+        <div class="bench-section">
+            <div class="bench-section-title">DIAGNOSTIC SYSTÈME · TEMPS RÉEL</div>
+            <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:0;">Métriques du serveur via psutil. Auto-refresh 2s.</p>
+        </div>
+        <div id="sys-stats-container">
+            <div class="bench-running" style="padding:20px; justify-content:center;"><div class="spinner"></div> Récupération des stats…</div>
+        </div>`;
+}
+function startSysStatsLoop() {
+    if (state.sysStatsTimer) clearInterval(state.sysStatsTimer);
+    refreshSysStats();
+    state.sysStatsTimer = setInterval(refreshSysStats, 2000);
+    if (records.sysChecksRun === 0) { records.sysChecksRun = 1; saveRecords(); checkAchievements(); }
+}
+async function refreshSysStats() {
+    const container = document.getElementById('sys-stats-container');
+    if (!container) return;
+    try {
+        const r = await fetch('/api/system/stats').then(r => r.json());
+        if (r.detail) {
+            container.innerHTML = `<div style="color:var(--red); padding:20px; text-align:center;">⚠ ${r.detail}<br><span style="font-size:0.7rem; color:var(--text-dim);">Lancer : <code>pip install psutil</code></span></div>`;
+            clearInterval(state.sysStatsTimer); state.sysStatsTimer = null;
+            return;
+        }
+        const cpu = r.cpu, mem = r.memory, disk = r.disk, net = r.network, sys = r.system, jarvis = r.jarvis;
+        const cpuCls = cpu.percent > 80 ? 'crit' : cpu.percent > 50 ? 'warn' : '';
+        const memCls = mem.percent > 80 ? 'crit' : mem.percent > 60 ? 'warn' : '';
+        const diskCls = disk.percent > 90 ? 'crit' : disk.percent > 70 ? 'warn' : '';
+        const cpuBars = cpu.per_core.map(v => {
+            const cls = v > 80 ? 'crit' : v > 50 ? 'warn' : '';
+            return `<div class="cpu-bar ${cls}" style="height:${Math.max(3, v)}%;" title="${v}%"></div>`;
+        }).join('');
+        const circRadius = 30;
+        const circCirc = 2 * Math.PI * circRadius;
+        const memOffset = circCirc * (1 - mem.percent / 100);
+        const memColor = memCls === 'crit' ? '#ff4466' : memCls === 'warn' ? '#ffaa00' : '#00ff88';
+        let html = `<div class="sys-grid">
+            <div class="sys-card">
+                <div class="sys-card-header"><span class="sys-card-title">CPU</span><span class="sys-card-value ${cpuCls}">${cpu.percent}%</span></div>
+                <div class="cpu-bars">${cpuBars}</div>
+                <div class="sys-card-sub">${cpu.count} cœurs${cpu.freq_mhz ? ' · '+cpu.freq_mhz+' MHz' : ''}${cpu.load_avg ? ' · load '+cpu.load_avg.map(l=>l.toFixed(2)).join('/') : ''}</div>
+            </div>
+            <div class="sys-card">
+                <div class="sys-card-header"><span class="sys-card-title">RAM</span><span class="sys-card-value ${memCls}">${mem.used_gb} / ${mem.total_gb} GB</span></div>
+                <div class="donut-wrap">
+                    <svg width="100" height="80" viewBox="0 0 100 80">
+                        <circle cx="50" cy="50" r="${circRadius}" fill="none" stroke="rgba(0,200,255,0.15)" stroke-width="6"/>
+                        <circle cx="50" cy="50" r="${circRadius}" fill="none" stroke="${memColor}" stroke-width="6" stroke-dasharray="${circCirc}" stroke-dashoffset="${memOffset}" transform="rotate(-90 50 50)" style="transition:stroke-dashoffset 0.5s ease;"/>
+                        <text x="50" y="55" text-anchor="middle" fill="${memColor}" font-family="Orbitron" font-size="14" font-weight="500">${mem.percent}%</text>
+                    </svg>
+                </div>
+                <div class="sys-card-sub">Swap: ${mem.swap_used_gb} / ${mem.swap_total_gb} GB</div>
+            </div>
+            <div class="sys-card">
+                <div class="sys-card-header"><span class="sys-card-title">DISQUE</span><span class="sys-card-value ${diskCls}">${disk.used_gb} / ${disk.total_gb} GB</span></div>
+                <div class="sys-stats">
+                    <div><span>Libre</span><span>${disk.free_gb} GB</span></div>
+                    <div><span>Utilisation</span><span>${disk.percent}%</span></div>
+                    <div><span>Lectures</span><span>${(disk.read_mb_total/1024).toFixed(1)} GB</span></div>
+                    <div><span>Écritures</span><span>${(disk.write_mb_total/1024).toFixed(1)} GB</span></div>
+                </div>
+            </div>
+            <div class="sys-card">
+                <div class="sys-card-header"><span class="sys-card-title">RÉSEAU</span><span class="sys-card-value">⇅</span></div>
+                <div class="sys-stats">
+                    <div><span>Envoyé</span><span>${(net.sent_mb_total/1024).toFixed(2)} GB</span></div>
+                    <div><span>Reçu</span><span>${(net.recv_mb_total/1024).toFixed(2)} GB</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="bench-section" style="margin-top:0;">
+            <div class="bench-section-title">PROCESSUS JARVIS</div>
+            <div class="sys-stats">
+                <div><span>Mémoire</span><span>${jarvis.memory_mb} MB</span></div>
+                <div><span>CPU</span><span>${jarvis.cpu_percent}%</span></div>
+                <div><span>Threads</span><span>${jarvis.threads}</span></div>
+                <div><span>Uptime</span><span>${formatDuration(jarvis.uptime_seconds)}</span></div>
+                <div><span>Historique</span><span>${jarvis.history_size} messages</span></div>
+                <div><span>Agents</span><span>${jarvis.agents_count}</span></div>
+            </div>
+        </div>
+        <div class="bench-section" style="margin:10px 0 0;">
+            <div class="bench-section-title">SYSTÈME</div>
+            <div class="sys-stats">
+                <div><span>Plateforme</span><span>${sys.platform}</span></div>
+                <div><span>Python</span><span>${sys.python_version}</span></div>
+                <div><span>Uptime serveur</span><span>${formatDuration(sys.uptime_seconds)}</span></div>
+            </div>
+        </div>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--red); padding:20px; text-align:center;">⚠ ${e.message}</div>`;
+    }
+}
+
+function renderBenchRecords() {
+    const recordCards = `
+        <div class="record-card gold">
+            <div class="record-label">MEILLEUR TTFB</div>
+            <div class="record-val">${records.bestTTFB > 0 ? records.bestTTFB+'ms' : '—'}</div>
+            <div class="record-meta">${records.bestTTFBModel ? records.bestTTFBModel.split('/')[1] + ' · ' + records.bestTTFBDate : 'Aucun record'}</div>
+        </div>
+        <div class="record-card silver">
+            <div class="record-label">PIC TOK/S</div>
+            <div class="record-val">${records.bestTPS > 0 ? records.bestTPS.toFixed(1) : '—'}</div>
+            <div class="record-meta">${records.bestTPSModel ? records.bestTPSModel.split('/')[1] + ' · ' + records.bestTPSDate : 'Aucun record'}</div>
+        </div>
+        <div class="record-card bronze">
+            <div class="record-label">MEILLEUR SCORE</div>
+            <div class="record-val">${records.bestScore > 0 ? records.bestScore+' ('+records.bestGrade+')' : '—'}</div>
+            <div class="record-meta">${records.bestScoreModel ? records.bestScoreModel.split('/')[1] + ' · ' + records.bestScoreDate : 'Aucun record'}</div>
+        </div>`;
+    const unlockedCount = Object.keys(achievements).length;
+    const achievementsList = ACHIEVEMENTS_DEF.map(a => {
+        const unlocked = !!achievements[a.id];
+        return `<div class="achievement ${unlocked ? '' : 'locked'}" title="${a.label}"><div class="achievement-icon">${unlocked ? a.icon : '🔒'}</div><div class="achievement-label">${unlocked ? a.label : '???'}</div></div>`;
+    }).join('');
+    return `
+        <div class="bench-section">
+            <div class="bench-section-title">🏆 RECORDS PERSONNELS</div>
+            <div class="records-grid">${recordCards}</div>
+        </div>
+        <div class="bench-section">
+            <div class="bench-section-title">SUCCÈS DÉBLOQUÉS · ${unlockedCount}/${ACHIEVEMENTS_DEF.length}</div>
+            <div class="achievements-grid">${achievementsList}</div>
+        </div>
+        <div class="bench-section">
+            <div class="bench-section-title">STATISTIQUES SESSION</div>
+            <div class="sys-stats">
+                <div><span>Messages totaux</span><span>${records.totalMessages}</span></div>
+                <div><span>Messages vocaux</span><span>${records.voiceMessages}</span></div>
+                <div><span>Benchmarks lancés</span><span>${records.benchmarksRun}</span></div>
+                <div><span>Tests d'agents</span><span>${records.agentTestsRun}</span></div>
+                <div><span>Modèles testés</span><span>${records.modelsTested}</span></div>
+                <div><span>Diagnostics système</span><span>${records.sysChecksRun}</span></div>
+            </div>
+            <button class="menu-btn danger" style="width:100%; margin-top:10px;" onclick="if(confirm('Effacer tous les records et succès ?')) { localStorage.removeItem('jarvis.records.v1'); localStorage.removeItem('jarvis.achievements.v1'); records = loadRecords(); achievements = loadAchievements(); renderBenchs(); switchBenchTab('records'); showToast('RECORDS EFFACÉS'); }">🗑 EFFACER LES RECORDS</button>
+        </div>`;
+}
+
+dom.input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    else if (e.key === 'Escape') { dom.input.value = ''; }
+    else if (e.key === 'ArrowUp' && !dom.input.value && state.inputHistory.length > 0) {
+        e.preventDefault();
+        if (state.histIdx > 0) state.histIdx--;
+        dom.input.value = state.inputHistory[state.histIdx] || '';
+    }
+    else if (e.key === 'ArrowDown' && state.histIdx < state.inputHistory.length - 1) {
+        state.histIdx++;
+        dom.input.value = state.inputHistory[state.histIdx] || '';
+    }
+});
+dom.sendBtn.addEventListener('click', sendMessage);
+dom.stopBtn.addEventListener('click', stopExecution);
+
+function fillInput(t) { dom.input.value = t; dom.input.focus(); }
+window.fillInput = fillInput;
+
+function toggleTerminal() {
+    const open = dom.terminal.style.display === 'block';
+    dom.terminal.style.display = open ? 'none' : 'block';
+    if (!open) ensureShellWS();
+    document.getElementById('terminal-btn').classList.toggle('active', !open);
+}
+window.toggleTerminal = toggleTerminal;
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+}
+window.toggleFullscreen = toggleFullscreen;
+
+async function clearChat() {
+    if (!confirm('Effacer tout l\'historique de conversation ?')) return;
+    try { await fetch('/clear', {method:'POST'}); } catch {}
+    [...dom.chatWindow.querySelectorAll('.msg-row')].forEach(r => r.remove());
+    state.msgCount = 0;
+    dom.statMsgs.textContent = '0';
+    showToast('HISTORIQUE EFFACÉ');
+}
+window.clearChat = clearChat;
+
+function exportChat() {
+    const messages = [...dom.chatWindow.querySelectorAll('.msg-row')].map(row => {
+        const role = row.classList.contains('user') ? 'USER' : 'JARVIS';
+        const text = row.querySelector('.msg-bubble')?.textContent.trim() || '';
+        return `[${role}] ${text}`;
+    }).join('\n\n');
+    const blob = new Blob([messages], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `jarvis-export-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('EXPORTÉ');
+}
+window.exportChat = exportChat;
+
+dom.modelSelect.addEventListener('change', e => {
+    settings.chat.defaultModel = e.target.value;
+    saveSettings();
+});
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (threeScene && dom.vizCanvas) {
+            const w = dom.vizCanvas.offsetWidth, h = dom.vizCanvas.offsetHeight;
+            if (w > 0 && h > 0) {
+                threeScene.camera.aspect = w / h;
+                threeScene.camera.updateProjectionMatrix();
+                threeScene.renderer.setSize(w, h);
+            }
+        }
+        if (liveScene && dom.liveCanvas && state.isLive) {
+            const w = dom.liveCanvas.offsetWidth, h = dom.liveCanvas.offsetHeight;
+            if (w > 0 && h > 0) {
+                liveScene.camera.aspect = w / h;
+                liveScene.camera.updateProjectionMatrix();
+                liveScene.renderer.setSize(w, h);
+            }
+        }
+    }, 150);
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopMainLoop();
+    else if (dom.vizToggle.checked || state.isLive) startMainLoop();
+});
+
+applySettings();
+if (settings.visual.vizEnabled) {
+    dom.vizContainer.style.display = 'block';
+    document.body.classList.add('no-bg-anim');
+    initSidebarViz().then(() => startMainLoop());
+}
+dom.input.focus();
+console.log('%cJARVIS v14 ready', 'color:#00c8ff; font-weight:bold; font-size:14px;');
+console.log(`Settings: ${SETTINGS_KEY} | Achievements: ${Object.keys(achievements).length}/${ACHIEVEMENTS_DEF.length}`);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (toggleBtn && sidebar) {
+        // 1. Au clic : on change l'état et on le sauvegarde
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            
+            // Sauvegarde du choix de l'utilisateur
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebar-state', isCollapsed ? 'collapsed' : 'expanded');
+        });
+
+        // 2. Au chargement : on restaure l'état sauvegardé
+        const savedState = localStorage.getItem('sidebar-state');
+        if (savedState === 'collapsed') {
+            sidebar.classList.add('collapsed');
+        }
+    }
+});
+
+const THEME_PRESETS = {
+    tron: { accent: 'cyan', bg: 'void_blue', ui: 'cobalt', anim: 'circle-trace' },
+    ultron: { accent: 'red', bg: 'black', ui: 'titanium', anim: 'hex-grid' },
+    predator: { accent: 'toxic_lime', bg: 'deep_forest', ui: 'emerald_ui', anim: 'thermal-scan' },
+    // ... complète la liste ici
+};
+
+function loadPreset(themeKey) {
+    const p = THEME_PRESETS[themeKey];
+    if (!p) return;
+
+    // 1. Déclencher l'animation de chargement personnalisée
+    showNeuralLoading(p.anim);
+
+    // 2. Appliquer les réglages après un court délai (pendant l'animation)
+    setTimeout(() => {
+        updateSetting('visual.accentColor', p.accent);
+        updateSetting('visual.bgColor', p.bg);
+        updateSetting('visual.uiColor', p.ui);
+        
+        applySettings();
+        renderSettings();
+    }, 1000);
+}
+
+function showNeuralLoading(animType) {
+    // Créer un overlay temporaire qui recouvre l'écran
+    const loader = document.createElement('div');
+    loader.className = `neural-loader ${animType}`;
+    document.body.appendChild(loader);
+    
+    // Supprimer le loader après 2.5 secondes
+    setTimeout(() => {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+    }, 2000);
+}
+</script>
+
+
+</body></html>

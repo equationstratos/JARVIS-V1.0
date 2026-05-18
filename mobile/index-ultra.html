@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a1428">
+    <title>JARVIS</title>
+    <style>
+        :root {
+            --user-accent: #0a84ff;
+            --bg-base: linear-gradient(180deg, #0a1428 0%, #1e3a6e 55%, #d8e8ff 100%);
+            --bg-fixed: #0a1428;
+            --bg-card: rgba(255, 255, 255, 0.06);
+            --bg-card-strong: rgba(255, 255, 255, 0.1);
+            --glass: rgba(15, 35, 75, 0.55);
+            --glass-strong: rgba(20, 45, 90, 0.75);
+            --border: rgba(140, 190, 255, 0.18);
+            --border-strong: rgba(140, 190, 255, 0.35);
+            --text: #f0f6ff;
+            --text-soft: rgba(220, 235, 255, 0.85);
+            --text-dim: rgba(180, 210, 240, 0.55);
+            --accent: var(--user-accent);
+            --accent-soft: color-mix(in srgb, var(--user-accent) 20%, transparent);
+            --accent-glow: color-mix(in srgb, var(--user-accent) 60%, transparent);
+            --danger: #ff4d6d;
+            --success: #34d399;
+            --nav-height: 72px;
+            --header-height: 56px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-lg: 22px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+            color: var(--text);
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background: var(--bg-fixed);
+            position: relative;
+            overscroll-behavior: none;
+        }
+
+        /* Background gradient layer */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: var(--bg-base);
+            z-index: -2;
+        }
+
+        /* Subtle ambient animation for iOS theme */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--user-accent) 12%, transparent), transparent 50%),
+                radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--user-accent) 8%, transparent), transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: ambient 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes ambient {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(2%, -2%) scale(1.08); }
+        }
+
+        /* ─── NEON THEME ─── */
+        body.theme-neon {
+            --bg-base: #050510;
+            --bg-fixed: #050510;
+            --bg-card: rgba(15, 15, 30, 0.7);
+            --bg-card-strong: rgba(20, 20, 40, 0.9);
+            --glass: rgba(10, 10, 25, 0.7);
+            --glass-strong: rgba(15, 15, 35, 0.9);
+            --border: color-mix(in srgb, var(--user-accent) 40%, transparent);
+            --border-strong: var(--user-accent);
+            --text: #e6f9ff;
+            --text-soft: color-mix(in srgb, var(--user-accent) 70%, #ffffff);
+            --text-dim: color-mix(in srgb, var(--user-accent) 40%, #888);
+            --user-accent: #00ffea;
+        }
+
+        body.theme-neon::before {
+            background:
+                radial-gradient(ellipse at top, color-mix(in srgb, var(--user-accent) 15%, transparent), transparent 60%),
+                radial-gradient(ellipse at bottom, color-mix(in srgb, var(--user-accent) 8%, transparent), transparent 60%),
+                #050510;
+        }
+
+        body.theme-neon::after {
+            background-image:
+                radial-gradient(2px 2px at 20% 30%, var(--user-accent), transparent),
+                radial-gradient(1.5px 1.5px at 60% 70%, var(--user-accent), transparent),
+                radial-gradient(2px 2px at 80% 20%, color-mix(in srgb, var(--user-accent) 80%, white), transparent),
+                radial-gradient(1px 1px at 40% 90%, var(--user-accent), transparent),
+                radial-gradient(1.5px 1.5px at 90% 50%, var(--user-accent), transparent);
+            background-size: 200px 200px;
+            opacity: 0.5;
+            animation: neonStars 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes neonStars {
+            0%   { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+
+        body.theme-neon .card,
+        body.theme-neon .input-glass,
+        body.theme-neon .header,
+        body.theme-neon .nav-bar,
+        body.theme-neon .input-bar {
+            box-shadow: 0 0 12px color-mix(in srgb, var(--user-accent) 20%, transparent),
+                        inset 0 0 8px color-mix(in srgb, var(--user-accent) 8%, transparent);
+        }
+
+        body.theme-neon .send-btn,
+        body.theme-neon .live-btn,
+        body.theme-neon .btn-primary {
+            box-shadow: 0 0 14px var(--user-accent), 0 0 28px color-mix(in srgb, var(--user-accent) 40%, transparent);
+        }
+
+        body.theme-neon .swatch.active,
+        body.theme-neon .theme-card.active {
+            box-shadow: 0 0 0 2px var(--user-accent), 0 0 12px var(--user-accent);
+        }
+
+        /* ─── ICONS ─── */
+        .icon { width: 22px; height: 22px; fill: currentColor; flex-shrink: 0; display: block; }
+        .icon-sm { width: 18px; height: 18px; }
+        .icon-lg { width: 28px; height: 28px; }
+
+        /* ─── LAYOUT ─── */
+        .app {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            position: relative;
+            height: calc(var(--header-height) + var(--safe-top));
+            padding-top: var(--safe-top);
+            background: var(--glass);
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-left: 18px;
+            padding-right: 18px;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 2px 12px color-mix(in srgb, var(--user-accent) 40%, transparent);
+        }
+
+        .brand-logo .icon { width: 18px; height: 18px; }
+
+        .brand-name {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: var(--text);
+        }
+
+        .conn-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-soft);
+        }
+
+        .conn-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .conn-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        .conn-dot.offline { background: var(--danger); }
+
+        /* ─── CONTENT ─── */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+
+        .page {
+            display: none;
+            min-height: 100%;
+            padding-bottom: 100px;
+        }
+
+        .page.active { display: block; }
+
+        /* ─── CHAT ─── */
+        .chat-page { padding-bottom: 120px; }
+
+        .messages {
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
+            text-align: center;
+            min-height: 50vh;
+        }
+
+        .empty-orb {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--user-accent) 80%, white), var(--user-accent));
+            margin-bottom: 24px;
+            position: relative;
+            box-shadow: 0 0 40px color-mix(in srgb, var(--user-accent) 40%, transparent),
+                        0 8px 32px color-mix(in srgb, var(--user-accent) 20%, transparent);
+            animation: orbBreath 4s ease-in-out infinite;
+        }
+
+        @keyframes orbBreath {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .empty-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+            letter-spacing: -0.4px;
+        }
+
+        .empty-sub {
+            font-size: 15px;
+            color: var(--text-soft);
+            max-width: 280px;
+            line-height: 1.5;
+        }
+
+        .message {
+            max-width: 84%;
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: msgIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 12px color-mix(in srgb, var(--user-accent) 35%, transparent);
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--glass-strong);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message.thinking {
+            display: flex;
+            gap: 6px;
+            padding: 16px 20px;
+        }
+
+        .think-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: thinkPulse 1.2s ease-in-out infinite;
+        }
+        .think-dot:nth-child(2) { animation-delay: 0.15s; }
+        .think-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes thinkPulse {
+            0%, 60%, 100% { transform: scale(0.7); opacity: 0.4; }
+            30% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ─── INPUT BAR ─── */
+        .input-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(var(--nav-height) + var(--safe-bottom));
+            padding: 10px 12px;
+            background: var(--glass);
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .input-glass {
+            flex: 1;
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 4px 4px 4px 16px;
+            display: flex;
+            align-items: flex-end;
+            min-height: 44px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-glass:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 16px;
+            font-family: inherit;
+            padding: 9px 0;
+            max-height: 100px;
+            resize: none;
+            line-height: 1.3;
+        }
+
+        .input-field::placeholder { color: var(--text-dim); }
+
+        .icon-btn {
+            min-width: 40px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, opacity 0.15s, background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .icon-btn:active { transform: scale(0.92); }
+        .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .live-btn {
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border-strong);
+            color: var(--accent);
+        }
+
+        .live-btn:hover { background: var(--accent-soft); }
+
+        .send-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .send-btn:disabled {
+            background: var(--bg-card);
+            color: var(--text-dim);
+        }
+
+        /* ─── SECTIONS / CARDS ─── */
+        .section {
+            margin: 20px 16px 0;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 4px 10px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        /* ─── LIST ITEMS ─── */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            min-height: 60px;
+            cursor: pointer;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .list-item:last-child { border-bottom: none; }
+        .list-item:active { background: var(--bg-card); }
+        .list-item.no-press { cursor: default; }
+        .list-item.no-press:active { background: transparent; }
+
+        .item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--bg-card-strong);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+
+        .item-body { flex: 1; min-width: 0; }
+
+        .item-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .item-sub {
+            font-size: 13px;
+            color: var(--text-soft);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-trail {
+            color: var(--text-dim);
+        }
+
+        .list-item.selected {
+            background: var(--accent-soft);
+        }
+
+        .list-item.selected .item-icon {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .list-item.selected .item-trail { color: var(--accent); }
+
+        /* ─── FORM FIELDS ─── */
+        .field {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .field:last-child { border-bottom: none; }
+
+        .field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .field-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            padding: 6px 0;
+        }
+
+        .field-input::placeholder { color: var(--text-dim); }
+
+        .small-btn {
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 13px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            min-height: 36px;
+        }
+
+        /* ─── BIG BUTTONS ─── */
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: calc(100% - 32px);
+            margin: 16px;
+            padding: 14px;
+            min-height: 52px;
+            border: none;
+            border-radius: 14px;
+            background: var(--accent);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+        .btn-secondary {
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        /* ─── TOGGLES ─── */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            min-height: 60px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+
+        .toggle {
+            width: 48px;
+            height: 28px;
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toggle.on {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .toggle.on .toggle-thumb { transform: translateX(20px); }
+
+        /* ─── THEME / ACCENT SELECTORS ─── */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .theme-card {
+            padding: 14px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .theme-card.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .theme-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .theme-card-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            padding: 16px;
+        }
+
+        .swatch {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.15s, border-color 0.15s;
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        .swatch:active { transform: scale(0.9); }
+        .swatch.active { border-color: var(--text); transform: scale(1.1); }
+
+        /* ─── NAVIGATION ─── */
+        .nav-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: calc(var(--nav-height) + var(--safe-bottom));
+            padding-bottom: var(--safe-bottom);
+            background: var(--glass-strong);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-top: 1px solid var(--border);
+            display: flex;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            color: var(--text-dim);
+            min-height: 60px;
+            position: relative;
+            transition: color 0.15s;
+            padding: 4px;
+        }
+
+        .nav-item:active { color: var(--accent); }
+        .nav-item.active { color: var(--accent); }
+
+        .nav-item.active::before {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 3px;
+            border-radius: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .nav-item .icon { transition: transform 0.15s; }
+        .nav-item.active .icon { transform: scale(1.1); }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: calc(var(--nav-height) + var(--safe-bottom) + 80px);
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--glass-strong);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-strong);
+            color: var(--text);
+            padding: 12px 22px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ─── LIVE MODE OVERLAY ─── */
+        .live-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-fixed);
+            z-index: 9999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .live-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .live-overlay::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at center, color-mix(in srgb, var(--user-accent) 15%, transparent), transparent 70%);
+            pointer-events: none;
+        }
+
+        #liveCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .live-status {
+            position: absolute;
+            top: calc(var(--safe-top) + 60px);
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 16px var(--accent-glow);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .live-substatus {
+            position: absolute;
+            top: calc(var(--safe-top) + 96px);
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-soft);
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 10;
+            padding: 0 32px;
+        }
+
+        .live-exit {
+            position: absolute;
+            top: calc(var(--safe-top) + 16px);
+            right: 16px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--glass-strong);
+            border: 1px solid var(--border-strong);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            z-index: 11;
+            transition: transform 0.15s;
+        }
+
+        .live-exit:active { transform: scale(0.9); }
+
+        .live-mute {
+            position: absolute;
+            bottom: calc(var(--safe-bottom) + 48px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 11;
+        }
+
+        .live-mute-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--glass-strong);
+            border: 2px solid var(--border-strong);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: transform 0.15s, background 0.2s;
+        }
+
+        .live-mute-btn:active { transform: scale(0.9); }
+        .live-mute-btn.muted { background: var(--danger); border-color: var(--danger); }
+        .live-mute-btn .icon { width: 26px; height: 26px; }
+    </style>
+</head>
+<body class="theme-ios">
+
+    <!-- SVG icon sprite -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-logo" viewBox="0 0 24 24">
+                <path d="M6 4h12v3h-4v10a4 4 0 01-8 0v-1h3v1a1 1 0 002 0V7H6V4z"/>
+            </symbol>
+            <symbol id="i-chat" viewBox="0 0 24 24">
+                <path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2h-9l-5 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2zm3 5v2h10V9H7zm0 4v2h7v-2H7z"/>
+            </symbol>
+            <symbol id="i-models" viewBox="0 0 24 24">
+                <path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/>
+            </symbol>
+            <symbol id="i-settings" viewBox="0 0 24 24">
+                <path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9.43 5l-1.86-.85a7.94 7.94 0 000-2.3l1.86-.85-1.5-2.6-1.9.72a8 8 0 00-2-1.16L15.5 4h-3l-.53 1.96a8 8 0 00-2 1.16l-1.9-.72-1.5 2.6 1.86.85a7.94 7.94 0 000 2.3l-1.86.85 1.5 2.6 1.9-.72a8 8 0 002 1.16L8.5 20h3l.53-1.96a8 8 0 002-1.16l1.9.72 1.5-2.6z"/>
+            </symbol>
+            <symbol id="i-send" viewBox="0 0 24 24">
+                <path d="M12 4l-8 8h5v8h6v-8h5l-8-8z"/>
+            </symbol>
+            <symbol id="i-mic" viewBox="0 0 24 24">
+                <path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.93V21h2v-3.07A7 7 0 0019 11h-2z"/>
+            </symbol>
+            <symbol id="i-mic-off" viewBox="0 0 24 24">
+                <path d="M3.27 3L2 4.27l5.84 5.84a4 4 0 005.66 5.66l1.05 1.05A6.99 6.99 0 0112 18a7 7 0 01-7-7H3a9 9 0 0014.18 7.41L19.73 21 21 19.73 3.27 3zM15 11V6a3 3 0 00-6 0v.18l6 6V11z"/>
+            </symbol>
+            <symbol id="i-close" viewBox="0 0 24 24">
+                <path d="M6.4 5L5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6L17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6z"/>
+            </symbol>
+            <symbol id="i-check" viewBox="0 0 24 24">
+                <path d="M9 16.2L5.3 12.5l-1.4 1.4L9 19l11-11-1.4-1.4z"/>
+            </symbol>
+            <symbol id="i-eye" viewBox="0 0 24 24">
+                <path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5C21.3 7.6 17 4.5 12 4.5zm0 12.5a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>
+            </symbol>
+            <symbol id="i-key" viewBox="0 0 24 24">
+                <path d="M14 6a4 4 0 11-8 0 4 4 0 018 0zm-1 4h6v4h-2v3h-2v-3h-2v-4z"/>
+            </symbol>
+            <symbol id="i-server" viewBox="0 0 24 24">
+                <path d="M4 4h16v6H4V4zm0 10h16v6H4v-6zm3-7v2h2V7H7zm0 10v2h2v-2H7z"/>
+            </symbol>
+            <symbol id="i-cpu" viewBox="0 0 24 24">
+                <path d="M9 2v2H7V2H5v2H4a2 2 0 00-2 2v1h2v2H2v2h2v2H2v2h2v2H2v1a2 2 0 002 2h1v2h2v-2h2v2h2v-2h2v2h2v-2h2v2h2v-2h1a2 2 0 002-2v-1h-2v-2h2v-2h-2v-2h2v-2h-2V7h2V6a2 2 0 00-2-2h-1V2h-2v2h-2V2h-2v2h-2V2H9zm-2 5h10v10H7V7z"/>
+            </symbol>
+            <symbol id="i-palette" viewBox="0 0 24 24">
+                <path d="M12 3a9 9 0 100 18c1.1 0 2-.9 2-2 0-.5-.2-1-.6-1.4-.4-.4-.6-.9-.6-1.4 0-1.1.9-2 2-2h2a4 4 0 004-4c0-3.9-3.9-7.2-9-7.2zM6.5 11A1.5 1.5 0 118 9.5 1.5 1.5 0 016.5 11zm3-4A1.5 1.5 0 1111 5.5 1.5 1.5 0 019.5 7zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm3 4a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+            </symbol>
+            <symbol id="i-bolt" viewBox="0 0 24 24">
+                <path d="M11 2L4 14h6l-1 8 7-12h-6z"/>
+            </symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24">
+                <path d="M9 3v1H4v2h16V4h-5V3H9zm-3 5v12a2 2 0 002 2h8a2 2 0 002-2V8H6zm3 3h2v8H9v-8zm4 0h2v8h-2v-8z"/>
+            </symbol>
+            <symbol id="i-refresh" viewBox="0 0 24 24">
+                <path d="M12 4V1L8 5l4 4V6a6 6 0 11-6 6H4a8 8 0 108-8z"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <div class="app">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="brand">
+                <div class="brand-logo"><svg class="icon"><use href="#i-logo"/></svg></div>
+                <div class="brand-name" id="pageTitle">JARVIS</div>
+            </div>
+            <div class="conn-pill">
+                <span class="conn-dot offline" id="connDot"></span>
+                <span id="connText">Hors ligne</span>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="content">
+            <!-- CHAT PAGE -->
+            <section class="page active chat-page" id="chatPage">
+                <div class="messages" id="messages">
+                    <div class="empty-state">
+                        <div class="empty-orb"></div>
+                        <div class="empty-title">Bonjour</div>
+                        <div class="empty-sub">Choisis un modèle dans l'onglet Modèles, puis commence à écrire</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODELS PAGE -->
+            <section class="page" id="modelsPage">
+                <div class="section">
+                    <div class="section-title">Serveur</div>
+                    <div class="card">
+                        <div class="field">
+                            <div class="field-label">URL Backend</div>
+                            <div class="field-row">
+                                <input type="text" class="field-input" id="backendUrl" placeholder="http://127.0.0.1:3001" autocomplete="off">
+                                <button class="small-btn" onclick="refreshConnection()" aria-label="Refresh">
+                                    <svg class="icon icon-sm"><use href="#i-refresh"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Modèle actif</div>
+                    <div class="card">
+                        <div class="list-item no-press">
+                            <div class="item-icon"><svg class="icon icon-sm"><use href="#i-cpu"/></svg></div>
+                            <div class="item-body">
+                                <div class="item-title" id="currentModel">Aucun</div>
+                                <div class="item-sub">Sélectionne un modèle ci-dessous</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modelCategories"></div>
+                <div style="height: 32px"></div>
+            </section>
+
+            <!-- SETTINGS PAGE -->
+            <section class="page" id="settingsPage">
+                <div class="section">
+                    <div class="section-title">Thème</div>
+                    <div class="card">
+                        <div class="theme-grid">
+                            <div class="theme-card active" data-theme="ios" onclick="setTheme('ios')">
+                                <div class="theme-card-name">iOS Blue</div>
+                                <div class="theme-card-desc">Dégradé bleu fluide</div>
+                            </div>
+                            <div class="theme-card" data-theme="neon" onclick="setTheme('neon')">
+                                <div class="theme-card-name">Neon</div>
+                                <div class="theme-card-desc">Effet néon brillant</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Couleur d'accent</div>
+                    <div class="card">
+                        <div class="swatch-grid" id="swatchGrid"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Clés API</div>
+                    <div class="card" id="apiKeysList"></div>
+                </div>
+                <button class="btn-primary" onclick="saveApiKeys()">
+                    <svg class="icon"><use href="#i-key"/></svg>
+                    <span>Sauvegarder les clés</span>
+                </button>
+
+                <div class="section">
+                    <div class="section-title">Voix</div>
+                    <div class="card">
+                        <div class="toggle-row">
+                            <div class="item-body">
+                                <div class="item-title">Mode hands-free</div>
+                                <div class="item-sub">Bouton micro dans la barre de chat</div>
+                            </div>
+                            <div class="toggle on" id="liveToggle" onclick="toggleSetting('live')">
+                                <div class="toggle-thumb"></div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Vitesse TTS</div>
+                            <div class="field-row">
+                                <input type="range" min="0.5" max="1.5" step="0.1" value="1.0" id="ttsSpeed" style="flex:1" onchange="setTtsSpeed(this.value)">
+                                <span id="ttsSpeedLabel" style="color:var(--text-soft); font-size:14px; min-width:40px; text-align:right">1.0×</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Préférences</div>
+                    <div class="card">
+                        <div class="toggle-row">
+                            <div class="item-body">
+                                <div class="item-title">Streaming texte</div>
+                                <div class="item-sub">Réponses token par token</div>
+                            </div>
+                            <div class="toggle on" id="streamToggle" onclick="toggleSetting('stream')">
+                                <div class="toggle-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary btn-secondary" onclick="clearChat()">
+                    <svg class="icon"><use href="#i-trash"/></svg>
+                    <span>Effacer la conversation</span>
+                </button>
+                <button class="btn-primary btn-danger" onclick="resetAll()">
+                    <svg class="icon"><use href="#i-refresh"/></svg>
+                    <span>Tout réinitialiser</span>
+                </button>
+                <div style="height: 32px"></div>
+            </section>
+        </main>
+
+        <!-- INPUT BAR -->
+        <div class="input-bar" id="inputBar">
+            <div class="input-glass">
+                <textarea class="input-field" id="messageInput" placeholder="Message..." rows="1"></textarea>
+            </div>
+            <button class="icon-btn live-btn" id="liveBtn" onclick="enterLiveMode()" aria-label="Mode live">
+                <svg class="icon"><use href="#i-mic"/></svg>
+            </button>
+            <button class="icon-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled aria-label="Envoyer">
+                <svg class="icon"><use href="#i-send"/></svg>
+            </button>
+        </div>
+
+        <!-- NAVIGATION -->
+        <nav class="nav-bar">
+            <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
+                <svg class="icon"><use href="#i-chat"/></svg>
+                <span class="nav-label">Chat</span>
+            </div>
+            <div class="nav-item" data-page="models" onclick="switchPage('models')">
+                <svg class="icon"><use href="#i-models"/></svg>
+                <span class="nav-label">Modèles</span>
+            </div>
+            <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+                <svg class="icon"><use href="#i-settings"/></svg>
+                <span class="nav-label">Réglages</span>
+            </div>
+        </nav>
+
+        <!-- TOAST -->
+        <div class="toast" id="toast"></div>
+
+        <!-- LIVE MODE OVERLAY -->
+        <div class="live-overlay" id="liveOverlay">
+            <canvas id="liveCanvas"></canvas>
+            <div class="live-status" id="liveStatus">Initialisation…</div>
+            <div class="live-substatus" id="liveSubStatus">Préparation du micro</div>
+            <button class="live-exit" onclick="exitLiveMode()" aria-label="Quitter">
+                <svg class="icon"><use href="#i-close"/></svg>
+            </button>
+            <div class="live-mute">
+                <button class="live-mute-btn" id="liveMuteBtn" onclick="toggleMute()" aria-label="Mute">
+                    <svg class="icon"><use href="#i-mic"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── State ───
+        const State = {
+            backend: localStorage.getItem('jarvis_backend') || 'http://127.0.0.1:3001',
+            model: localStorage.getItem('jarvis_model') || '',
+            messages: JSON.parse(localStorage.getItem('jarvis_messages') || '[]'),
+            apiKeys: JSON.parse(localStorage.getItem('jarvis_api_keys') || '{}'),
+            stream: localStorage.getItem('jarvis_stream') !== 'false',
+            live: localStorage.getItem('jarvis_live') !== 'false',
+            theme: localStorage.getItem('jarvis_theme') || 'ios',
+            accent: localStorage.getItem('jarvis_accent') || '#0a84ff',
+            ttsSpeed: parseFloat(localStorage.getItem('jarvis_tts_speed') || '1.0'),
+        };
+
+        const API_KEYS = [
+            { key: 'ANTHROPIC_API_KEY', label: 'Anthropic Claude' },
+            { key: 'OPENAI_API_KEY', label: 'OpenAI GPT' },
+            { key: 'GOOGLE_API_KEY', label: 'Google Gemini' },
+            { key: 'MISTRAL_API_KEY', label: 'Mistral AI' },
+            { key: 'GROQ_API_KEY', label: 'Groq' },
+            { key: 'PERPLEXITY_API_KEY', label: 'Perplexity' },
+        ];
+
+        const ACCENT_COLORS = [
+            '#0a84ff', '#5e9eff', '#00d4ff', '#00ffea',
+            '#7c5cff', '#ff5ca8', '#ff9500', '#30d158',
+        ];
+
+        const $ = id => document.getElementById(id);
+        const pages = { chat: $('chatPage'), models: $('modelsPage'), settings: $('settingsPage') };
+
+        // ─── Init ───
+        function init() {
+            setTheme(State.theme, false);
+            setAccent(State.accent, false);
+            $('backendUrl').value = State.backend;
+            $('ttsSpeed').value = State.ttsSpeed;
+            $('ttsSpeedLabel').textContent = State.ttsSpeed.toFixed(1) + '×';
+            $('streamToggle').classList.toggle('on', State.stream);
+            $('liveToggle').classList.toggle('on', State.live);
+            $('liveBtn').style.display = State.live ? 'flex' : 'none';
+
+            renderSwatches();
+            renderApiKeys();
+            renderMessages();
+            updateCurrentModel();
+            checkHealth();
+            loadModels();
+            setupInput();
+
+            $('backendUrl').addEventListener('change', e => {
+                State.backend = e.target.value.trim() || 'http://127.0.0.1:3001';
+                localStorage.setItem('jarvis_backend', State.backend);
+                checkHealth();
+                loadModels();
+            });
+
+            setInterval(checkHealth, 15000);
+        }
+
+        // ─── Theme ───
+        function setTheme(name, save = true) {
+            State.theme = name;
+            document.body.className = `theme-${name}`;
+            document.querySelectorAll('.theme-card').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === name);
+            });
+            if (save) localStorage.setItem('jarvis_theme', name);
+        }
+
+        function renderSwatches() {
+            const grid = $('swatchGrid');
+            grid.innerHTML = '';
+            ACCENT_COLORS.forEach(color => {
+                const sw = document.createElement('div');
+                sw.className = 'swatch' + (color === State.accent ? ' active' : '');
+                sw.style.background = color;
+                sw.dataset.color = color;
+                sw.onclick = () => setAccent(color);
+                grid.appendChild(sw);
+            });
+        }
+
+        function setAccent(color, save = true) {
+            State.accent = color;
+            document.documentElement.style.setProperty('--user-accent', color);
+            document.querySelectorAll('.swatch').forEach(el => {
+                el.classList.toggle('active', el.dataset.color === color);
+            });
+            if (save) localStorage.setItem('jarvis_accent', color);
+        }
+
+        // ─── Navigation ───
+        function switchPage(name) {
+            Object.entries(pages).forEach(([k, el]) => el.classList.toggle('active', k === name));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === name));
+            $('pageTitle').textContent = name === 'chat' ? 'JARVIS' : name === 'models' ? 'Modèles' : 'Réglages';
+            $('inputBar').style.display = name === 'chat' ? 'flex' : 'none';
+        }
+
+        // ─── Health & Models ───
+        async function checkHealth() {
+            try {
+                const r = await fetch(`${State.backend}/health`, { signal: AbortSignal.timeout(5000) });
+                if (r.ok) {
+                    $('connDot').className = 'conn-dot online';
+                    $('connText').textContent = 'Connecté';
+                    return;
+                }
+            } catch {}
+            $('connDot').className = 'conn-dot offline';
+            $('connText').textContent = 'Hors ligne';
+        }
+
+        function refreshConnection() {
+            checkHealth();
+            loadModels();
+            showToast('Reconnexion…');
+        }
+
+        async function loadModels() {
+            try {
+                const r = await fetch(`${State.backend}/models`, { signal: AbortSignal.timeout(5000) });
+                if (!r.ok) return;
+                renderModels(await r.json());
+            } catch {
+                $('modelCategories').innerHTML = '';
+            }
+        }
+
+        function renderModels(data) {
+            const container = $('modelCategories');
+            container.innerHTML = '';
+            Object.entries(data).forEach(([cat, models]) => {
+                const section = document.createElement('div');
+                section.className = 'section';
+                section.innerHTML = `<div class="section-title">${cat}</div>`;
+                const card = document.createElement('div');
+                card.className = 'card';
+                models.forEach(m => {
+                    const item = document.createElement('div');
+                    item.className = 'list-item' + (m.id === State.model ? ' selected' : '');
+                    item.innerHTML = `
+                        <div class="item-icon"><svg class="icon icon-sm"><use href="#i-cpu"/></svg></div>
+                        <div class="item-body">
+                            <div class="item-title">${m.name}</div>
+                            <div class="item-sub">${m.description || m.id}</div>
+                        </div>
+                        <div class="item-trail"><svg class="icon icon-sm" style="display:${m.id === State.model ? 'block' : 'none'}"><use href="#i-check"/></svg></div>
+                    `;
+                    item.onclick = () => selectModel(m.id, m.name, item);
+                    card.appendChild(item);
+                });
+                section.appendChild(card);
+                container.appendChild(section);
+            });
+        }
+
+        function selectModel(id, name, el) {
+            State.model = id;
+            localStorage.setItem('jarvis_model', id);
+            document.querySelectorAll('#modelCategories .list-item').forEach(e => {
+                e.classList.remove('selected');
+                const tr = e.querySelector('.item-trail svg');
+                if (tr) tr.style.display = 'none';
+            });
+            el.classList.add('selected');
+            const tr = el.querySelector('.item-trail svg');
+            if (tr) tr.style.display = 'block';
+            updateCurrentModel();
+            showToast(`Modèle : ${name}`);
+        }
+
+        function updateCurrentModel() {
+            $('currentModel').textContent = State.model || 'Aucun sélectionné';
+        }
+
+        // ─── API Keys ───
+        function renderApiKeys() {
+            const list = $('apiKeysList');
+            list.innerHTML = '';
+            API_KEYS.forEach(({ key, label }) => {
+                const value = State.apiKeys[key] || '';
+                const masked = value && value.length > 8 ? value.slice(0, 4) + '••••' + value.slice(-4) : '';
+                const field = document.createElement('div');
+                field.className = 'field';
+                field.innerHTML = `
+                    <div class="field-label">${label}</div>
+                    <div class="field-row">
+                        <input type="password" class="field-input" data-key="${key}" placeholder="${masked || 'Non configurée'}" value="${value}">
+                        <button class="small-btn" onclick="toggleKeyView(this)" aria-label="Voir">
+                            <svg class="icon icon-sm"><use href="#i-eye"/></svg>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(field);
+            });
+        }
+
+        function toggleKeyView(btn) {
+            const input = btn.previousElementSibling;
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        async function saveApiKeys() {
+            const inputs = document.querySelectorAll('[data-key]');
+            const updates = {};
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val) {
+                    State.apiKeys[input.dataset.key] = val;
+                    updates[input.dataset.key] = val;
+                }
+            });
+            localStorage.setItem('jarvis_api_keys', JSON.stringify(State.apiKeys));
+            try {
+                const r = await fetch(`${State.backend}/api-keys`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                });
+                showToast(r.ok ? 'Clés sauvegardées' : 'Sauvegardé localement');
+            } catch {
+                showToast('Sauvegardé localement');
+            }
+            renderApiKeys();
+        }
+
+        // ─── Settings toggles ───
+        function toggleSetting(name) {
+            if (name === 'stream') {
+                State.stream = !State.stream;
+                $('streamToggle').classList.toggle('on', State.stream);
+                localStorage.setItem('jarvis_stream', State.stream);
+            } else if (name === 'live') {
+                State.live = !State.live;
+                $('liveToggle').classList.toggle('on', State.live);
+                $('liveBtn').style.display = State.live ? 'flex' : 'none';
+                localStorage.setItem('jarvis_live', State.live);
+            }
+        }
+
+        function setTtsSpeed(v) {
+            State.ttsSpeed = parseFloat(v);
+            $('ttsSpeedLabel').textContent = State.ttsSpeed.toFixed(1) + '×';
+            localStorage.setItem('jarvis_tts_speed', State.ttsSpeed);
+        }
+
+        // ─── Messages ───
+        function renderMessages() {
+            const container = $('messages');
+            if (State.messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-orb"></div>
+                        <div class="empty-title">Bonjour</div>
+                        <div class="empty-sub">Choisis un modèle dans l'onglet Modèles, puis commence à écrire</div>
+                    </div>
+                `;
+                return;
+            }
+            container.innerHTML = '';
+            State.messages.forEach(m => addMessage(m.role, m.text, false));
+        }
+
+        function addMessage(role, text, save = true) {
+            const container = $('messages');
+            if (container.querySelector('.empty-state')) container.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = text;
+            container.appendChild(div);
+            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+            if (save) {
+                State.messages.push({ role, text });
+                localStorage.setItem('jarvis_messages', JSON.stringify(State.messages));
+            }
+            return div;
+        }
+
+        function showThinking() {
+            const div = document.createElement('div');
+            div.className = 'message assistant thinking';
+            div.id = 'thinking';
+            div.innerHTML = '<div class="think-dot"></div><div class="think-dot"></div><div class="think-dot"></div>';
+            $('messages').appendChild(div);
+            $('messages').parentElement.scrollTop = 999999;
+        }
+
+        function removeThinking() {
+            const el = $('thinking');
+            if (el) el.remove();
+        }
+
+        // ─── Send ───
+        function setupInput() {
+            const input = $('messageInput');
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+                $('sendBtn').disabled = !input.value.trim();
+            });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        async function sendMessage() {
+            const input = $('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            if (!State.model) {
+                showToast('Sélectionne un modèle');
+                switchPage('models');
+                return;
+            }
+            input.value = '';
+            input.style.height = 'auto';
+            $('sendBtn').disabled = true;
+            addMessage('user', text);
+            showThinking();
+
+            const form = new FormData();
+            form.append('query', text);
+            form.append('model', State.model);
+
+            try {
+                if (State.stream) {
+                    await streamResponse(form);
+                } else {
+                    const r = await fetch(`${State.backend}/chat`, { method: 'POST', body: form });
+                    removeThinking();
+                    const data = await r.json();
+                    addMessage('assistant', data.response || data.error || 'Pas de réponse');
+                }
+            } catch (e) {
+                removeThinking();
+                addMessage('assistant', 'Erreur : ' + e.message);
+            }
+        }
+
+        async function streamResponse(form) {
+            const r = await fetch(`${State.backend}/chat/stream`, { method: 'POST', body: form });
+            removeThinking();
+            const reader = r.body.getReader();
+            const decoder = new TextDecoder();
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            $('messages').appendChild(div);
+            let buffer = '', full = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.type === 'token') {
+                                full += data.data;
+                                div.textContent = full;
+                                $('messages').parentElement.scrollTop = 999999;
+                            } else if (data.type === 'done') {
+                                full = data.data || full;
+                                div.textContent = full;
+                            }
+                        } catch {}
+                    }
+                }
+            }
+            State.messages.push({ role: 'assistant', text: full });
+            localStorage.setItem('jarvis_messages', JSON.stringify(State.messages));
+        }
+
+        function clearChat() {
+            if (!confirm('Effacer toute la conversation ?')) return;
+            State.messages = [];
+            localStorage.removeItem('jarvis_messages');
+            renderMessages();
+            showToast('Conversation effacée');
+        }
+
+        function resetAll() {
+            if (!confirm('Réinitialiser TOUS les paramètres ?')) return;
+            localStorage.clear();
+            location.reload();
+        }
+
+        // ─── Toast ───
+        let toastTimer;
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        // ─── LIVE MODE ───
+        const LiveMode = {
+            active: false,
+            muted: false,
+            recognition: null,
+            audioContext: null,
+            analyser: null,
+            mediaStream: null,
+            micSource: null,
+            ttsSource: null,
+            currentAudio: null,
+            animationFrame: null,
+            state: 'idle',
+            currentLevel: 0,
+            freqData: null,
+
+            async enter() {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) {
+                    showToast('Live mode requiert Chrome, Edge ou Safari');
+                    return;
+                }
+                if (!State.model) {
+                    showToast('Sélectionne d\'abord un modèle');
+                    switchPage('models');
+                    return;
+                }
+                this.active = true;
+                this.muted = false;
+                $('liveMuteBtn').classList.remove('muted');
+                $('liveMuteBtn').querySelector('use').setAttribute('href', '#i-mic');
+                $('liveOverlay').classList.add('active');
+                this.setStatus('Préparation…', 'Activation du micro');
+                try {
+                    await this.initAudio();
+                    this.startVisualization();
+                    this.startListening();
+                } catch (e) {
+                    this.setStatus('Erreur', e.message);
+                    console.error(e);
+                }
+            },
+
+            exit() {
+                this.active = false;
+                $('liveOverlay').classList.remove('active');
+                if (this.recognition) {
+                    try { this.recognition.stop(); } catch {}
+                    this.recognition = null;
+                }
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio = null;
+                }
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(t => t.stop());
+                    this.mediaStream = null;
+                }
+                if (this.audioContext) {
+                    this.audioContext.close().catch(() => {});
+                    this.audioContext = null;
+                }
+                cancelAnimationFrame(this.animationFrame);
+            },
+
+            async initAudio() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 256;
+                this.analyser.smoothingTimeConstant = 0.8;
+                this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+
+                try {
+                    this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.micSource = this.audioContext.createMediaStreamSource(this.mediaStream);
+                } catch (e) {
+                    console.warn('Mic access denied', e);
+                }
+            },
+
+            startListening() {
+                if (!this.active || this.muted) return;
+                this.setStatus('À l\'écoute', 'Parle, je t\'écoute');
+                if (this.micSource) {
+                    try { this.micSource.disconnect(); } catch {}
+                    this.micSource.connect(this.analyser);
+                }
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SR();
+                this.recognition.lang = 'fr-FR';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.onresult = (e) => {
+                    const transcript = e.results[0][0].transcript;
+                    this.onTranscript(transcript);
+                };
+                this.recognition.onerror = (e) => {
+                    if (!this.active) return;
+                    if (e.error === 'not-allowed') {
+                        this.setStatus('Micro refusé', 'Autorise le micro dans les réglages');
+                        return;
+                    }
+                    setTimeout(() => { if (this.active && this.state === 'listening' && !this.muted) this.startListening(); }, 500);
+                };
+                this.recognition.onend = () => {
+                    if (this.active && this.state === 'listening' && !this.muted) {
+                        setTimeout(() => this.startListening(), 200);
+                    }
+                };
+                this.state = 'listening';
+                try { this.recognition.start(); } catch {}
+            },
+
+            async onTranscript(text) {
+                if (!text || !this.active) return;
+                this.state = 'thinking';
+                this.setStatus('Réflexion…', text);
+                try {
+                    if (this.recognition) { try { this.recognition.stop(); } catch {} }
+                    const form = new FormData();
+                    form.append('query', text);
+                    form.append('model', State.model);
+                    const r = await fetch(`${State.backend}/chat`, { method: 'POST', body: form });
+                    const data = await r.json();
+                    const response = (data.response || data.error || '').trim();
+                    if (!response) {
+                        this.startListening();
+                        return;
+                    }
+                    if (this.active) await this.speak(response);
+                } catch (e) {
+                    this.setStatus('Erreur', e.message);
+                    setTimeout(() => { if (this.active) this.startListening(); }, 1500);
+                }
+            },
+
+            async speak(text) {
+                if (!this.active) return;
+                this.state = 'speaking';
+                this.setStatus('Réponse…', text.slice(0, 80) + (text.length > 80 ? '…' : ''));
+                try {
+                    const r = await fetch(`${State.backend}/tts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, voice: 'ff_siwis', speed: State.ttsSpeed }),
+                    });
+                    if (!r.ok) {
+                        const err = await r.json().catch(() => ({}));
+                        this.setStatus('TTS indisponible', err.error || 'Vérifie le serveur Kokoro :8000');
+                        setTimeout(() => { if (this.active) this.startListening(); }, 2500);
+                        return;
+                    }
+                    const blob = await r.blob();
+                    const url = URL.createObjectURL(blob);
+                    const audio = new Audio(url);
+                    this.currentAudio = audio;
+
+                    try {
+                        if (this.micSource) { try { this.micSource.disconnect(); } catch {} }
+                        if (this.ttsSource) { try { this.ttsSource.disconnect(); } catch {} }
+                        this.ttsSource = this.audioContext.createMediaElementSource(audio);
+                        this.ttsSource.connect(this.analyser);
+                        this.analyser.connect(this.audioContext.destination);
+                    } catch (e) {
+                        console.warn('Audio routing fail', e);
+                    }
+
+                    audio.onended = () => {
+                        URL.revokeObjectURL(url);
+                        this.currentAudio = null;
+                        if (this.active) {
+                            this.state = 'listening';
+                            this.startListening();
+                        }
+                    };
+                    audio.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        if (this.active) this.startListening();
+                    };
+                    await audio.play();
+                } catch (e) {
+                    this.setStatus('Erreur', e.message);
+                    setTimeout(() => { if (this.active) this.startListening(); }, 1500);
+                }
+            },
+
+            toggleMute() {
+                this.muted = !this.muted;
+                const btn = $('liveMuteBtn');
+                btn.classList.toggle('muted', this.muted);
+                btn.querySelector('use').setAttribute('href', this.muted ? '#i-mic-off' : '#i-mic');
+                if (this.muted) {
+                    if (this.recognition) { try { this.recognition.stop(); } catch {} }
+                    this.setStatus('Micro coupé', 'Tape pour reprendre');
+                } else if (this.state === 'listening') {
+                    this.startListening();
+                }
+            },
+
+            setStatus(main, sub) {
+                $('liveStatus').textContent = main;
+                $('liveSubStatus').textContent = sub || '';
+            },
+
+            startVisualization() {
+                const canvas = $('liveCanvas');
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const resize = () => {
+                    canvas.width = window.innerWidth * dpr;
+                    canvas.height = window.innerHeight * dpr;
+                    canvas.style.width = window.innerWidth + 'px';
+                    canvas.style.height = window.innerHeight + 'px';
+                    ctx.scale(dpr, dpr);
+                };
+                resize();
+                window.addEventListener('resize', resize);
+
+                const draw = () => {
+                    if (!this.active) return;
+                    this.animationFrame = requestAnimationFrame(draw);
+                    this.analyser.getByteFrequencyData(this.freqData);
+                    let sum = 0;
+                    for (let i = 0; i < this.freqData.length; i++) sum += this.freqData[i];
+                    const targetLevel = sum / (this.freqData.length * 255);
+                    this.currentLevel += (targetLevel - this.currentLevel) * 0.15;
+                    this.renderFluid(ctx, canvas.width / dpr, canvas.height / dpr);
+                };
+                draw();
+            },
+
+            renderFluid(ctx, w, h) {
+                const accent = getComputedStyle(document.documentElement).getPropertyValue('--user-accent').trim() || '#0a84ff';
+                const t = performance.now() / 1000;
+                const cx = w / 2, cy = h / 2;
+                const baseRadius = Math.min(w, h) * 0.18;
+                const stateBoost = this.state === 'speaking' ? 1.4 : this.state === 'listening' ? 1.0 : 0.7;
+                const level = Math.max(this.currentLevel, 0.08) * stateBoost;
+
+                // motion-blur trail
+                ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                ctx.fillRect(0, 0, w, h);
+
+                // Multiple fluid layers
+                const layers = 6;
+                for (let layer = 0; layer < layers; layer++) {
+                    ctx.beginPath();
+                    const phase = t * (0.5 + layer * 0.1) + layer * 0.5;
+                    const layerScale = 1 + layer * 0.13;
+                    const points = 80;
+                    for (let i = 0; i <= points; i++) {
+                        const a = (i / points) * Math.PI * 2;
+                        const freqIdx = Math.floor((i / points) * this.freqData.length * 0.6);
+                        const reactive = (this.freqData[freqIdx] / 255) * 70;
+                        const wave = Math.sin(a * 5 + phase) * 14
+                                   + Math.cos(a * 3 + phase * 1.3) * 10
+                                   + Math.sin(a * 8 + phase * 0.7) * 6;
+                        const r = baseRadius * layerScale + wave + reactive * (0.5 + layer * 0.1) + level * 80;
+                        const x = cx + Math.cos(a) * r;
+                        const y = cy + Math.sin(a) * r;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.strokeStyle = accent;
+                    ctx.globalAlpha = 0.45 - layer * 0.06;
+                    ctx.lineWidth = 1.8;
+                    ctx.shadowBlur = 16;
+                    ctx.shadowColor = accent;
+                    ctx.stroke();
+                    if (layer === 0) {
+                        ctx.fillStyle = accent;
+                        ctx.globalAlpha = 0.06 + level * 0.12;
+                        ctx.fill();
+                    }
+                }
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+
+                // central core
+                const coreR = baseRadius * 0.4 + level * 30;
+                const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+                grad.addColorStop(0, accent);
+                grad.addColorStop(0.6, accent + '60');
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+                ctx.fill();
+            },
+        };
+
+        function enterLiveMode() { LiveMode.enter(); }
+        function exitLiveMode() { LiveMode.exit(); }
+        function toggleMute() { LiveMode.toggleMute(); }
+
+        // ─── Start ───
+        init();
+    </script>
+</body>
+</html>

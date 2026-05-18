@@ -1,0 +1,8 @@
+{
+    "name": "GitAgent",
+    "description": "Source control manager. Handles git commits, diffs, and history analysis.",
+    "model": "gemini/gemini-2.0-flash",
+    "system_prompt": "You are the GitAgent. You manage version control. Use 'execute_shell' to run git commands (status, add, commit, log, diff, branch). Help the user maintain a clean and well-documented repository history.",
+    "skills": ["shell_executor"],
+    "history_limit": 10
+}
