@@ -84,6 +84,13 @@ install_system_deps() {
         fi
     fi
 
+    # Toujours s'assurer que python3-venv est installé (Ubuntu peut avoir python3 sans venv)
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]]; then
+        PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+        sudo apt-get install -y -qq "python3.${PY_VER##*.}-venv" python3-venv python3-pip 2>/dev/null \
+            || sudo apt-get install -y -qq python3-venv python3-pip 2>/dev/null || true
+    fi
+
     # Python >= 3.10
     local py_ver
     py_ver=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
