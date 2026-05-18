@@ -341,10 +341,17 @@ install_mobile_deps() {
 install_pm2() {
     info "Installation de PM2 (gestionnaire de services)..."
 
-    # Résoudre le binaire pm2 (peut être dans un chemin non standard après npm install -g)
+    # npm config get prefix = chemin global npm (ex: /usr/local ou /usr)
+    # Le binaire pm2 est dans {prefix}/bin/pm2
+    npm_global_bin() {
+        local prefix
+        prefix="$(npm config get prefix 2>/dev/null)"
+        echo "${prefix}/bin"
+    }
+
     find_pm2() {
         command -v pm2 2>/dev/null \
-            || command -v "$(npm root -g 2>/dev/null)/../bin/pm2" 2>/dev/null \
+            || { local b; b="$(npm_global_bin)/pm2"; [[ -x "$b" ]] && echo "$b"; } \
             || echo ""
     }
 
@@ -355,21 +362,21 @@ install_pm2() {
     else
         if ! has_cmd npm; then
             warn "npm non disponible, PM2 non installé"
-            warn "Pour installer PM2 manuellement : npm install -g pm2"
+            warn "Pour installer PM2 manuellement : sudo npm install -g pm2"
             return
         fi
 
-        info "Installation de pm2 via npm..."
-        npm install -g pm2 2>&1 | tail -5 || true
+        info "Installation de pm2 via npm (sudo)..."
+        sudo npm install -g pm2 2>&1 | grep -v "^npm warn" | tail -5 || true
 
-        # Chercher pm2 après l'installation (le chemin global npm peut ne pas être dans PATH)
-        NPM_GLOBAL_BIN="$(npm bin -g 2>/dev/null || npm root -g 2>/dev/null | sed 's|/node_modules||')"/bin
+        # Ajouter le chemin global npm au PATH pour cette session
+        NPM_GLOBAL_BIN="$(npm_global_bin)"
         export PATH="$NPM_GLOBAL_BIN:$PATH"
 
         PM2_BIN="$(find_pm2)"
         if [[ -z "$PM2_BIN" ]]; then
-            warn "pm2 non trouvé après installation. Chemin npm global : $NPM_GLOBAL_BIN"
-            warn "Ajoutez '$NPM_GLOBAL_BIN' à votre PATH, puis : pm2 start $REPO_DIR/ecosystem.config.js"
+            warn "pm2 introuvable après installation (chemin testé : $NPM_GLOBAL_BIN)"
+            warn "Réessayez manuellement : sudo npm install -g pm2"
             return
         fi
         success "PM2 installé : $("$PM2_BIN" --version)"
@@ -413,8 +420,9 @@ print_success() {
     echo -e "  ${CYAN}bash ${REPO_DIR}/launch-JARVIS.sh${NC}"
     echo ""
     echo -e "${BOLD}Si 'pm2: command not found' après l'installation :${NC}"
-    echo -e "  ${CYAN}export PATH=\"\$(npm root -g | sed 's|/node_modules||')/bin:\$PATH\"${NC}"
-    echo -e "  ${CYAN}echo 'export PATH=\"\$(npm root -g | sed '"'"'s|/node_modules||'"'"')/bin:\$PATH\"' >> ~/.bashrc${NC}"
+    echo    "  sudo npm install -g pm2"
+    echo    "  # ou ajoutez le chemin global npm à votre PATH :"
+    echo    "  export PATH=\"\$(npm config get prefix)/bin:\$PATH\""
     echo ""
     echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
     echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
