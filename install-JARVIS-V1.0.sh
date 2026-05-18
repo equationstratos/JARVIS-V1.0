@@ -368,7 +368,7 @@ install_pm2() {
     local PM2_BIN="$NPM_GLOBAL/bin/pm2"
 
     if [[ -x "$PM2_BIN" ]]; then
-        success "PM2 déjà installé : $("$PM2_BIN" --version)"
+        success "PM2 déjà installé : $("$PM2_BIN" --version 2>/dev/null | tail -1)"
     else
         info "Installation de pm2..."
         npm install -g pm2 2>&1 | grep -E "^(added|npm error)" | head -3 || true
@@ -377,8 +377,12 @@ install_pm2() {
             warn "PM2 introuvable après installation — vérifiez les logs npm ci-dessus"
             return
         fi
-        success "PM2 installé : $("$PM2_BIN" --version)"
+        success "PM2 installé : $("$PM2_BIN" --version 2>/dev/null | tail -1)"
     fi
+
+    # Rendre pm2 disponible immédiatement dans le shell courant via symlink
+    sudo ln -sf "$PM2_BIN" /usr/local/bin/pm2 2>/dev/null \
+        || ln -sf "$PM2_BIN" "$HOME/.local/bin/pm2" 2>/dev/null || true
 
     info "Démarrage des services JARVIS via PM2..."
     "$PM2_BIN" start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
