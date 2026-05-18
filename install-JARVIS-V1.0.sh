@@ -322,6 +322,7 @@ setup_ip_whitelist() {
 
     echo ""
     info "Pour ajouter une IP plus tard : ${BOLD}python main.py --authorize-ip=82.1.2.3${NC}"
+}
 
 # ── App mobile ────────────────────────────────────────────────
 install_mobile_deps() {
