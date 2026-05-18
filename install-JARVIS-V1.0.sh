@@ -339,23 +339,45 @@ install_mobile_deps() {
 # ── PM2 (gestionnaire de services) ───────────────────────────
 install_pm2() {
     info "Installation de PM2 (gestionnaire de services)..."
-    if has_cmd pm2; then
-        success "PM2 déjà installé : $(pm2 --version)"
+
+    # Résoudre le binaire pm2 (peut être dans un chemin non standard après npm install -g)
+    find_pm2() {
+        command -v pm2 2>/dev/null \
+            || command -v "$(npm root -g 2>/dev/null)/../bin/pm2" 2>/dev/null \
+            || echo ""
+    }
+
+    PM2_BIN="$(find_pm2)"
+
+    if [[ -n "$PM2_BIN" ]]; then
+        success "PM2 déjà installé : $("$PM2_BIN" --version 2>/dev/null || echo 'version inconnue')"
     else
-        if has_cmd npm; then
-            npm install -g pm2 --silent
-            success "PM2 installé : $(pm2 --version)"
-        else
+        if ! has_cmd npm; then
             warn "npm non disponible, PM2 non installé"
             warn "Pour installer PM2 manuellement : npm install -g pm2"
             return
         fi
+
+        info "Installation de pm2 via npm..."
+        npm install -g pm2 2>&1 | tail -5 || true
+
+        # Chercher pm2 après l'installation (le chemin global npm peut ne pas être dans PATH)
+        NPM_GLOBAL_BIN="$(npm bin -g 2>/dev/null || npm root -g 2>/dev/null | sed 's|/node_modules||')"/bin
+        export PATH="$NPM_GLOBAL_BIN:$PATH"
+
+        PM2_BIN="$(find_pm2)"
+        if [[ -z "$PM2_BIN" ]]; then
+            warn "pm2 non trouvé après installation. Chemin npm global : $NPM_GLOBAL_BIN"
+            warn "Ajoutez '$NPM_GLOBAL_BIN' à votre PATH, puis : pm2 start $REPO_DIR/ecosystem.config.js"
+            return
+        fi
+        success "PM2 installé : $("$PM2_BIN" --version)"
     fi
 
+    # Utiliser le chemin absolu pour les appels PM2 suivants
     info "Configuration de PM2 pour les services JARVIS..."
-    # Démarrer les services une première fois pour les enregistrer dans PM2
-    pm2 start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
-    pm2 save --force 2>/dev/null || true
+    "$PM2_BIN" start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
+    "$PM2_BIN" save --force 2>/dev/null || true
     success "Services PM2 enregistrés"
     echo ""
     warn "IMPORTANT : Pour activer le redémarrage automatique au boot :"
@@ -388,6 +410,10 @@ print_success() {
     echo ""
     echo -e "  ${CYAN}# Ou directement (session terminal)${NC}"
     echo -e "  ${CYAN}bash ${REPO_DIR}/launch-JARVIS.sh${NC}"
+    echo ""
+    echo -e "${BOLD}Si 'pm2: command not found' après l'installation :${NC}"
+    echo -e "  ${CYAN}export PATH=\"\$(npm root -g | sed 's|/node_modules||')/bin:\$PATH\"${NC}"
+    echo -e "  ${CYAN}echo 'export PATH=\"\$(npm root -g | sed '"'"'s|/node_modules||'"'"')/bin:\$PATH\"' >> ~/.bashrc${NC}"
     echo ""
     echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
     echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
