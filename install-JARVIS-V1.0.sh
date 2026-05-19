@@ -140,13 +140,31 @@ setup_repo_dir() {
 # ── Environnement virtuel Python ──────────────────────────────
 setup_venv() {
     info "Configuration de l'environnement Python..."
+
+    # S'assurer que python3-venv est installé AVANT de créer le venv
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]]; then
+        local PY_VER
+        PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+        info "Installation de python${PY_VER}-venv..."
+        # Essayer le paquet spécifique à la version, puis le générique
+        sudo apt-get install -y "python${PY_VER}-venv" python3-venv python3-pip 2>/dev/null \
+            || sudo apt-get install -y python3-venv python3-pip 2>/dev/null \
+            || { warn "Impossible d'installer python-venv via apt. Tentative pip..."; python3 -m ensurepip --upgrade 2>/dev/null || true; }
+    fi
+
     # Recréer le venv si le dossier existe mais est cassé (activate manquant)
     if [[ -d "venv" && ! -f "venv/bin/activate" ]]; then
         warn "Environnement virtuel corrompu détecté, recréation..."
         rm -rf venv
     fi
     if [[ ! -d "venv" ]]; then
-        python3 -m venv venv
+        if ! python3 -m venv venv 2>/dev/null; then
+            warn "python3 -m venv a échoué — tentative de réinstallation forcée..."
+            local PY_VER
+            PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+            sudo apt-get install -y --fix-missing "python${PY_VER}-venv" 2>&1 | grep -v "^$" || true
+            python3 -m venv venv || die "Impossible de créer l'environnement virtuel. Lancez: sudo apt install python${PY_VER}-venv"
+        fi
         success "Environnement virtuel créé"
     else
         info "Environnement virtuel déjà présent, réutilisation"
