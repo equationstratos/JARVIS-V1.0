@@ -88,6 +88,12 @@ class Agent:
             kwargs["api_base"] = OLLAMA_API_BASE
             # Ollama doit charger le modèle en RAM → timeout généreux
             kwargs["timeout"] = 180
+            # Options Ollama pour maximiser la vitesse sur CPU
+            cpu_count = os.cpu_count() or 4
+            ollama_opts = kwargs.get("options", {})
+            ollama_opts.setdefault("num_ctx", 2048)     # context window réduit = prefill rapide
+            ollama_opts.setdefault("num_thread", cpu_count)  # tous les coeurs CPU
+            kwargs["options"] = ollama_opts
             # Tools : seulement si le modèle les supporte vraiment
             if "tools" in kwargs and not _ollama_supports_tools(model):
                 kwargs.pop("tools", None)

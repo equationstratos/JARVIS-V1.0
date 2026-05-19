@@ -261,7 +261,7 @@ install_ollama() {
     if ! curl -s http://localhost:11434/api/tags &>/dev/null; then
         info "Démarrage du serveur Ollama..."
         # Exporter OLLAMA_KEEP_ALIVE pour garder les modèles en RAM entre les requêtes
-        OLLAMA_KEEP_ALIVE=30m ollama serve &>/dev/null &
+        OLLAMA_KEEP_ALIVE=-1 ollama serve &>/dev/null &
         OLLAMA_BG_PID=$!
         local waited=0
         while ! curl -s http://localhost:11434/api/tags &>/dev/null; do
@@ -324,9 +324,9 @@ setup_env() {
         if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
             echo "" >> .env
             echo "# Ollama — performances" >> .env
-            echo "OLLAMA_KEEP_ALIVE=30m" >> .env
+            echo "OLLAMA_KEEP_ALIVE=-1" >> .env
             echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
-            success "Ajouté : OLLAMA_KEEP_ALIVE=30m dans .env"
+            success "Ajouté : OLLAMA_KEEP_ALIVE=-1 dans .env"
         fi
 
         return
@@ -355,7 +355,7 @@ setup_env() {
     if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
         echo "" >> .env
         echo "# Ollama — performances" >> .env
-        echo "OLLAMA_KEEP_ALIVE=30m" >> .env
+        echo "OLLAMA_KEEP_ALIVE=-1" >> .env
         echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
     fi
 

@@ -10,5 +10,6 @@
         "code_executor"
     ],
     "history_limit": 15,
+    "max_tokens": 512,
     "inherit_model": false
 }

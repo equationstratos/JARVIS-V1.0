@@ -4,6 +4,7 @@
     "model": "ollama/mistral-small3.2",
     "system_prompt": "Tu es un agent assistant. RÉPONDS TOUJOURS EN FRANÇAIS.\nLis que la partie Response sans les autres indicateurs.\nFinis tes phrases par Autre chose Monsieur ?\nVa au plus court si je ne demandes pas de precision particuliere.",
     "skills": [],
-    "history_limit": 10,
+    "history_limit": 6,
+    "max_tokens": 256,
     "inherit_model": false
 }

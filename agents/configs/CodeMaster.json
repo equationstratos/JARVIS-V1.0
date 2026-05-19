@@ -8,6 +8,7 @@
         "file_writer",
         "file_reader"
     ],
-    "history_limit": 15,
+    "history_limit": 8,
+    "max_tokens": 1024,
     "inherit_model": false
 }
