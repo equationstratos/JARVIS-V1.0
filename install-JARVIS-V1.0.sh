@@ -277,11 +277,12 @@ install_ollama() {
 
 # ── Modèles Ollama ────────────────────────────────────────────
 pull_ollama_models() {
-    info "Téléchargement des modèles Ollama (peut prendre du temps, ~5-8 GB)..."
+    info "Téléchargement des modèles Ollama..."
+    info "  • mistral-small3.2 (~13 GB) — qualité maximale (CodeMaster, PlannerAgent)"
+    info "  • llama3.2:3b      (~2 GB)  — rapide sur CPU (Manager, conversation)"
 
     pull_model() {
         local model="$1"
-        # ollama list affiche "mistral-small3.2:latest" — on cherche juste le nom de base
         local model_base="${model%%:*}"
         if ollama list 2>/dev/null | awk '{print $1}' | grep -q "^${model_base}"; then
             success "Modèle $model déjà présent"
@@ -302,8 +303,10 @@ pull_ollama_models() {
         fi
     }
 
+    # Modèle léger d'abord — utilisable immédiatement pour la conversation
+    pull_model "llama3.2:3b"
+    # Modèle puissant — pour code, planification, tâches complexes
     pull_model "mistral-small3.2"
-    pull_model "llama3"
 }
 
 # ── Fichier .env ──────────────────────────────────────────────
@@ -319,14 +322,22 @@ setup_env() {
             success "Corrigé : LITELLM_LOG=FALSE → WARNING dans .env"
         fi
 
-        # ── Ajout OLLAMA_KEEP_ALIVE si manquant ──
-        # Garde le modèle en RAM entre les requêtes → élimine le cold-start de 10-30s
-        if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
+        # ── OLLAMA_KEEP_ALIVE : forcer -1 (modèle toujours en RAM, zéro cold-start) ──
+        if grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
+            # Mettre à jour quelle que soit la valeur existante (30m, 5m, etc.)
+            sed -i 's|^OLLAMA_KEEP_ALIVE=.*|OLLAMA_KEEP_ALIVE=-1|' .env
+            success "OLLAMA_KEEP_ALIVE mis à jour → -1 (modèle permanent en RAM)"
+        else
             echo "" >> .env
             echo "# Ollama — performances" >> .env
             echo "OLLAMA_KEEP_ALIVE=-1" >> .env
             echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
             success "Ajouté : OLLAMA_KEEP_ALIVE=-1 dans .env"
+        fi
+
+        # ── OLLAMA_API_BASE : ajouter si manquant ──
+        if ! grep -q "^OLLAMA_API_BASE" .env 2>/dev/null; then
+            echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
         fi
 
         return
@@ -335,23 +346,23 @@ setup_env() {
     cp .env.example .env
 
     # Defaults Ollama (local, gratuit, sans clé API)
+    # llama3.2:3b = fallback léger et rapide (conversation, Manager)
+    # mistral-small3.2 = modèle principal pour les tâches complexes
     if [[ "$OS" == "macOS" ]]; then
         sed -i '' \
             -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
             -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3.2:3b|' \
             .env
     else
         sed -i \
             -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
             -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3.2:3b|' \
             .env
     fi
 
-    # ── Paramètres Ollama recommandés pour la latence ──
-    # OLLAMA_KEEP_ALIVE : garde le modèle en RAM entre les requêtes (évite le cold-start)
-    # OLLAMA_API_BASE   : endpoint explicite (évite des résolutions DNS inutiles)
+    # ── Paramètres Ollama : modèle en RAM permanent, endpoint explicite ──
     if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
         echo "" >> .env
         echo "# Ollama — performances" >> .env
