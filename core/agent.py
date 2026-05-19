@@ -43,7 +43,7 @@ class Agent:
         self.temperature = self.config.get("temperature", 0.3)
         self.max_tokens = self.config.get("max_tokens", 1024)
         self.routing_keywords = self.config.get("routing_keywords", [])
-        self.enable_validation = self.config.get("enable_validation", True)
+        self.enable_validation = self.config.get("enable_validation", False)
         self.tools = self._setup_tools()
         # Cache de la dernière sérialisation blackboard
         self._bb_cache_key: Optional[int] = None
