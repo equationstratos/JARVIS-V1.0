@@ -20,25 +20,18 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 die()     { error "$*"; exit 1; }
 
-# ── Bannière (appelée depuis main(), après le self-restart) ───
-print_banner() {
-    echo -e "${BOLD}${CYAN}"
-    cat << 'BANNER'
+# ── Bannière ──────────────────────────────────────────────────
+echo -e "${BOLD}${CYAN}"
+cat << 'EOF'
+     _   _    _   _____  __   __ ___ ____
+    | | / \  | | |  __ \ \ \ / /|_ _/ ___|
+ _  | |/ _ \ | | | |__) | \ V /  | |\___ \
+| |_| / ___ \| |___  _ <   | |   | | ___) |
+ \___/_/   \_\_____|_| \_\  |_|  |___|____/
 
-      ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗
-      ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝
-      ██║███████║██████╔╝██║   ██║██║███████╗
- ██   ██║██╔══██║██╔══██╗╚██╗ ██╔╝██║╚════██║
- ╚█████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║███████║
-  ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝
-
-BANNER
-    echo -e "${NC}${BOLD}  Just A Rather Very Intelligent System${NC}"
-    echo -e "${CYAN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${BOLD}Modular Agentic AI Ecosystem${NC}  —  Installer v1.0"
-    echo -e "${CYAN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-}
+  Modular Agentic AI Ecosystem — Installer v1.0
+EOF
+echo -e "${NC}"
 
 # ── Détection OS ──────────────────────────────────────────────
 detect_os() {
@@ -138,14 +131,6 @@ setup_repo_dir() {
             info "Clonage du repo..."
             git clone https://github.com/equationstratos/jarvis-v1.0.git "$REPO_DIR"
         fi
-
-        # Si le script est lancé via curl|bash, se réexécuter depuis le repo local
-        # pour s'assurer de tourner sur la version mise à jour (évite le cache CDN GitHub)
-        local local_script="$REPO_DIR/install-JARVIS-V1.0.sh"
-        if [[ -f "$local_script" && "$(realpath "$0" 2>/dev/null || echo "$0")" != "$(realpath "$local_script" 2>/dev/null || echo "$local_script")" ]]; then
-            info "Relance depuis le repo local (version à jour)..."
-            exec bash "$local_script"
-        fi
     fi
 
     cd "$REPO_DIR"
@@ -177,80 +162,11 @@ setup_venv() {
 install_python_deps() {
     info "Installation des dépendances Python (peut prendre quelques minutes)..."
     pip install -r requirements.txt --quiet
-
+    # chromadb est utilisé par web_v2.py mais pas encore dans requirements.txt
+    pip install chromadb --quiet 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
     # mistralai est requis pour le serveur TTS Voxtral
     pip install mistralai --quiet 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
-
-    # ── Fix connu : conflit opentelemetry entre chromadb et mistralai ──
-    # chromadb et mistralai tirent des versions incompatibles d'opentelemetry-semantic-conventions.
-    # La solution est de forcer la réinstallation de chromadb APRÈS mistralai pour laisser
-    # pip re-résoudre toutes les dépendances transitives correctement.
-    info "Résolution des dépendances chromadb (opentelemetry)..."
-    pip install --upgrade --force-reinstall chromadb --quiet 2>/dev/null \
-        || warn "chromadb non installé (mémoire vectorielle désactivée)"
-
-    # ── Pré-téléchargement du modèle d'embedding SentenceTransformer ──
-    # web_v2.py utilise all-MiniLM-L6-v2 au démarrage. Si HuggingFace n'est pas accessible
-    # en runtime, le fallback DefaultEmbeddingFunction est utilisé automatiquement.
-    # On tente le téléchargement maintenant pendant l'install où l'internet est disponible.
-    info "Pré-téléchargement du modèle d'embedding (all-MiniLM-L6-v2)..."
-    python3 -c "
-from sentence_transformers import SentenceTransformer
-try:
-    SentenceTransformer('all-MiniLM-L6-v2')
-    print('Modèle d embedding téléchargé avec succès')
-except Exception as e:
-    print(f'Téléchargement impossible ({e}) — fallback automatique au runtime')
-" 2>/dev/null || warn "Modèle d'embedding non téléchargé — le fallback sera utilisé au démarrage"
-
     success "Dépendances Python installées"
-}
-
-# ── Nettoyage des données runtime ChromaDB ────────────────────
-clean_chromadb_cache() {
-    # Si memoire_ia/ existe avec une configuration SentenceTransformer sauvegardée,
-    # ChromaDB va tenter de recharger ce modèle au démarrage → crash si HuggingFace inaccessible.
-    # On supprime uniquement si la collection utilise l'ancienne config ST.
-    local chroma_dir="$REPO_DIR/memoire_ia"
-    if [[ -d "$chroma_dir" ]]; then
-        # Détecter si la DB stocke une config SentenceTransformer
-        local has_st_config=false
-        if python3 -c "
-import sqlite3, sys, os
-db = os.path.join('$chroma_dir', 'chroma.sqlite3')
-if not os.path.exists(db): sys.exit(1)
-try:
-    conn = sqlite3.connect(db)
-    cur = conn.cursor()
-    cur.execute(\"SELECT value FROM collections_metadata WHERE key='hnsw:space' OR value LIKE '%SentenceTransformer%' LIMIT 1\")
-    rows = cur.fetchall()
-    conn.close()
-    # Chercher SentenceTransformer dans la table segments
-    conn2 = sqlite3.connect(db)
-    cur2 = conn2.cursor()
-    cur2.execute(\"SELECT value FROM embeddings_queue LIMIT 1\") if False else None
-    conn2.close()
-except Exception:
-    pass
-# Chercher directement dans le fichier (heuristique)
-with open(db, 'rb') as f:
-    content = f.read()
-    if b'SentenceTransformer' in content:
-        sys.exit(0)
-sys.exit(1)
-" 2>/dev/null; then
-            has_st_config=true
-        fi
-
-        if [[ "$has_st_config" == "true" ]]; then
-            warn "Base ChromaDB avec config SentenceTransformer détectée."
-            warn "Suppression de memoire_ia/ pour éviter un crash au démarrage..."
-            rm -rf "$chroma_dir"
-            success "Cache ChromaDB nettoyé (sera recréé au premier démarrage)"
-        else
-            info "Base ChromaDB existante conservée"
-        fi
-    fi
 }
 
 # ── Ollama ────────────────────────────────────────────────────
@@ -267,8 +183,7 @@ install_ollama() {
     # Démarrer ollama serve si pas actif
     if ! curl -s http://localhost:11434/api/tags &>/dev/null; then
         info "Démarrage du serveur Ollama..."
-        # Exporter OLLAMA_KEEP_ALIVE pour garder les modèles en RAM entre les requêtes
-        OLLAMA_KEEP_ALIVE=-1 ollama serve &>/dev/null &
+        ollama serve &>/dev/null &
         OLLAMA_BG_PID=$!
         local waited=0
         while ! curl -s http://localhost:11434/api/tags &>/dev/null; do
@@ -282,74 +197,58 @@ install_ollama() {
     fi
 }
 
-# ── Optimisation Ollama (systemd + env) ───────────────────────
+# ── Performance Ollama ────────────────────────────────────────
 configure_ollama_perf() {
-    local cpu_cores
-    cpu_cores=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
-    local service_file="/etc/systemd/system/ollama.service"
+    info "Configuration des performances Ollama..."
 
-    # Patcher le service systemd Ollama pour injecter les variables de perf
-    if [[ -f "$service_file" ]]; then
-        info "Optimisation du service Ollama (${cpu_cores} cœurs CPU)..."
-        # Ajouter les variables si absentes dans la section [Service]
-        local needs_reload=false
-        for var in \
-            "OLLAMA_KEEP_ALIVE=-1" \
-            "OLLAMA_MAX_LOADED_MODELS=2" \
-            "OLLAMA_NUM_THREAD=${cpu_cores}"
-        do
-            local key="${var%%=*}"
-            if ! grep -q "Environment=\"${key}=" "$service_file" 2>/dev/null && \
-               ! grep -q "Environment=${key}=" "$service_file" 2>/dev/null; then
-                sudo sed -i "/^\[Service\]/a Environment=\"${var}\"" "$service_file"
-                needs_reload=true
-            fi
-        done
-        if [[ "$needs_reload" == true ]]; then
+    # CPU cores pour OLLAMA_NUM_THREAD
+    CPU_CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo "4")
+
+    # Créer/patcher le fichier d'environment Ollama
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]] && systemctl is-active --quiet ollama; then
+        info "Patchage de /etc/systemd/system/ollama.service..."
+        sudo mkdir -p /etc/systemd/system
+
+        # Sauvegarder l'original si présent
+        [[ -f /etc/systemd/system/ollama.service ]] && sudo cp /etc/systemd/system/ollama.service /etc/systemd/system/ollama.service.bak
+
+        # Patcher les variables d'environment
+        if [[ -f /etc/systemd/system/ollama.service ]]; then
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_MAX_LOADED_MODELS=2"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i "/^\[Service\]/a Environment=\"OLLAMA_NUM_THREAD=$CPU_CORES\"" /etc/systemd/system/ollama.service 2>/dev/null || true
             sudo systemctl daemon-reload
-            sudo systemctl restart ollama 2>/dev/null || true
-            sleep 3  # Laisser Ollama redémarrer
-            success "Service Ollama optimisé (${cpu_cores} threads, 2 modèles en RAM)"
-        else
-            success "Service Ollama déjà optimisé"
+            sudo systemctl restart ollama
+            success "Ollama configuré pour performance (KEEP_ALIVE=-1, MAX_LOADED_MODELS=2, NUM_THREAD=$CPU_CORES)"
         fi
     else
-        # Pas de systemd (macOS ou installation sans service)
-        info "Pas de service systemd Ollama — paramètres injectés via .env"
+        info "Ollama systemd service non trouvé (installation manuelle ?)"
+        info "Définissez ces variables dans votre environnement pour optimiser :"
+        info "  export OLLAMA_KEEP_ALIVE=-1              # garder les modèles en RAM"
+        info "  export OLLAMA_MAX_LOADED_MODELS=2        # 2 modèles en parallèle"
+        info "  export OLLAMA_NUM_THREAD=$CPU_CORES      # utiliser tous les cores CPU"
     fi
 }
 
 # ── Modèles Ollama ────────────────────────────────────────────
 pull_ollama_models() {
-    info "Téléchargement des modèles Ollama..."
-    info "  • mistral-small3.2 (~13 GB) — qualité maximale (CodeMaster, PlannerAgent)"
-    info "  • llama3.2:3b      (~2 GB)  — rapide sur CPU (Manager, conversation)"
+    info "Téléchargement des modèles Ollama (peut prendre du temps, ~5-8 GB)..."
 
     pull_model() {
         local model="$1"
-        local model_base="${model%%:*}"
-        if ollama list 2>/dev/null | awk '{print $1}' | grep -q "^${model_base}"; then
+        if ollama list 2>/dev/null | grep -q "^${model}"; then
             success "Modèle $model déjà présent"
         else
-            info "Téléchargement de $model (peut prendre plusieurs minutes)..."
-            local attempt=1
-            while [[ $attempt -le 3 ]]; do
-                if ollama pull "$model"; then
-                    success "Modèle $model téléchargé"
-                    return
-                fi
-                warn "Tentative $attempt/3 échouée pour $model. Nouvelle tentative dans 5s..."
-                sleep 5
-                attempt=$((attempt + 1))
-            done
-            warn "Impossible de télécharger $model après 3 tentatives."
-            warn "Réessayez manuellement : ollama pull $model"
+            info "Téléchargement de $model..."
+            if ollama pull "$model"; then
+                success "Modèle $model téléchargé"
+            else
+                warn "Échec du téléchargement de $model. Réessayez: ollama pull $model"
+            fi
         fi
     }
 
-    # Modèle léger d'abord — utilisable immédiatement pour la conversation
     pull_model "llama3.2:3b"
-    # Modèle puissant — pour code, planification, tâches complexes
     pull_model "mistral-small3.2"
 }
 
@@ -358,68 +257,25 @@ setup_env() {
     info "Configuration du fichier .env..."
     if [[ -f ".env" ]]; then
         warn ".env déjà présent. Paramètres existants conservés."
-
-        # ── Patch LITELLM_LOG=FALSE → WARNING ──
-        # Le module Python logging n'a pas d'attribut FALSE → crash litellm au démarrage
-        if grep -q "^LITELLM_LOG=FALSE" .env 2>/dev/null; then
-            sed -i 's|^LITELLM_LOG=FALSE|LITELLM_LOG=WARNING|' .env
-            success "Corrigé : LITELLM_LOG=FALSE → WARNING dans .env"
-        fi
-
-        # ── OLLAMA_KEEP_ALIVE : forcer -1 (modèle toujours en RAM, zéro cold-start) ──
-        if grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
-            # Mettre à jour quelle que soit la valeur existante (30m, 5m, etc.)
-            sed -i 's|^OLLAMA_KEEP_ALIVE=.*|OLLAMA_KEEP_ALIVE=-1|' .env
-            success "OLLAMA_KEEP_ALIVE mis à jour → -1 (modèle permanent en RAM)"
-        else
-            echo "" >> .env
-            echo "# Ollama — performances" >> .env
-            echo "OLLAMA_KEEP_ALIVE=-1" >> .env
-            echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
-            success "Ajouté : OLLAMA_KEEP_ALIVE=-1 dans .env"
-        fi
-
-        # ── OLLAMA_API_BASE : ajouter si manquant ──
-        if ! grep -q "^OLLAMA_API_BASE" .env 2>/dev/null; then
-            echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
-        fi
-
-        # ── OLLAMA_MAX_LOADED_MODELS : garder 2 modèles simultanément en RAM ──
-        if grep -q "^OLLAMA_MAX_LOADED_MODELS" .env 2>/dev/null; then
-            sed -i 's|^OLLAMA_MAX_LOADED_MODELS=.*|OLLAMA_MAX_LOADED_MODELS=2|' .env
-        else
-            echo "OLLAMA_MAX_LOADED_MODELS=2" >> .env
-        fi
-
         return
     fi
 
     cp .env.example .env
 
     # Defaults Ollama (local, gratuit, sans clé API)
-    # llama3.2:3b = fallback léger et rapide (conversation, Manager)
-    # mistral-small3.2 = modèle principal pour les tâches complexes
+    # Utilise llama3.2:3b (rapide, 20-40 tok/s) et mistral-small3.2 (qualité, 3-8 tok/s)
     if [[ "$OS" == "macOS" ]]; then
         sed -i '' \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
             .env
     else
         sed -i \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
             .env
-    fi
-
-    # ── Paramètres Ollama : modèle en RAM permanent, 2 modèles simultanés ──
-    if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
-        echo "" >> .env
-        echo "# Ollama — performances" >> .env
-        echo "OLLAMA_KEEP_ALIVE=-1" >> .env
-        echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
-        echo "OLLAMA_MAX_LOADED_MODELS=2" >> .env
     fi
 
     success ".env créé avec les defaults Ollama"
@@ -519,81 +375,50 @@ install_mobile_deps() {
 install_pm2() {
     info "Installation de PM2 (gestionnaire de services)..."
 
-    if ! has_cmd npm; then
-        warn "npm non disponible — PM2 non installé (app mobile requise)"
-        return
-    fi
+    # Résoudre le binaire pm2 (peut être dans un chemin non standard après npm install -g)
+    find_pm2() {
+        command -v pm2 2>/dev/null \
+            || command -v "$(npm root -g 2>/dev/null)/../bin/pm2" 2>/dev/null \
+            || echo ""
+    }
 
-    # Installer pm2 dans ~/.npm-global (sans sudo, fonctionne partout)
-    local NPM_GLOBAL="$HOME/.npm-global"
-    mkdir -p "$NPM_GLOBAL"
-    npm config set prefix "$NPM_GLOBAL" 2>/dev/null || true
-    export PATH="$NPM_GLOBAL/bin:$PATH"
+    PM2_BIN="$(find_pm2)"
 
-    # Ajouter au PATH de façon permanente dans ~/.bashrc
-    if ! grep -q "npm-global" "$HOME/.bashrc" 2>/dev/null; then
-        echo "export PATH=\"$NPM_GLOBAL/bin:\$PATH\"" >> "$HOME/.bashrc"
-    fi
-
-    local PM2_BIN="$NPM_GLOBAL/bin/pm2"
-
-    if [[ -x "$PM2_BIN" ]]; then
-        success "PM2 déjà installé : $("$PM2_BIN" --version 2>/dev/null | tail -1)"
+    if [[ -n "$PM2_BIN" ]]; then
+        success "PM2 déjà installé : $("$PM2_BIN" --version 2>/dev/null || echo 'version inconnue')"
     else
-        info "Installation de pm2..."
-        npm install -g pm2 2>&1 | grep -E "^(added|npm error)" | head -3 || true
-
-        if [[ ! -x "$PM2_BIN" ]]; then
-            warn "PM2 introuvable après installation — vérifiez les logs npm ci-dessus"
+        if ! has_cmd npm; then
+            warn "npm non disponible, PM2 non installé"
+            warn "Pour installer PM2 manuellement : npm install -g pm2"
             return
         fi
-        success "PM2 installé : $("$PM2_BIN" --version 2>/dev/null | tail -1)"
+
+        info "Installation de pm2 via npm..."
+        npm install -g pm2 2>&1 | tail -5 || true
+
+        # Chercher pm2 après l'installation (le chemin global npm peut ne pas être dans PATH)
+        NPM_GLOBAL_BIN="$(npm bin -g 2>/dev/null || npm root -g 2>/dev/null | sed 's|/node_modules||')"/bin
+        export PATH="$NPM_GLOBAL_BIN:$PATH"
+
+        PM2_BIN="$(find_pm2)"
+        if [[ -z "$PM2_BIN" ]]; then
+            warn "pm2 non trouvé après installation. Chemin npm global : $NPM_GLOBAL_BIN"
+            warn "Ajoutez '$NPM_GLOBAL_BIN' à votre PATH, puis : pm2 start $REPO_DIR/ecosystem.config.js"
+            return
+        fi
+        success "PM2 installé : $("$PM2_BIN" --version)"
     fi
 
-    # Rendre pm2 disponible immédiatement dans le shell courant via symlink
-    sudo ln -sf "$PM2_BIN" /usr/local/bin/pm2 2>/dev/null \
-        || ln -sf "$PM2_BIN" "$HOME/.local/bin/pm2" 2>/dev/null || true
-
-    info "Démarrage des services JARVIS via PM2..."
+    # Utiliser le chemin absolu pour les appels PM2 suivants
+    info "Configuration de PM2 pour les services JARVIS..."
     "$PM2_BIN" start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
     "$PM2_BIN" save --force 2>/dev/null || true
-
-    # ── Vérification que le backend répond effectivement sur :8501 ──
-    info "Attente du démarrage du backend (port 8501)..."
-    local waited=0
-    local backend_ok=false
-    while [[ $waited -lt 45 ]]; do
-        if curl -s http://localhost:8501/health 2>/dev/null | grep -q '"status"'; then
-            backend_ok=true
-            break
-        fi
-        sleep 2
-        waited=$((waited + 2))
-    done
-
-    if [[ "$backend_ok" == "true" ]]; then
-        success "Backend JARVIS répond sur http://localhost:8501"
-        local agents
-        agents=$(curl -s http://localhost:8501/health 2>/dev/null | python3 -c \
-            "import sys,json; d=json.load(sys.stdin); print(f\"{len(d['agents'])} agents chargés\")" 2>/dev/null || echo "")
-        [[ -n "$agents" ]] && success "$agents"
-    else
-        warn "Le backend ne répond pas encore sur :8501 après 45s."
-        warn "Vérifiez les logs : $PM2_BIN logs jarvis-backend --lines 30"
-        warn "Cause probable : premier chargement d'Ollama (modèle en cours de mise en mémoire)"
-    fi
-
-    success "Services PM2 démarrés et sauvegardés"
-
-    # Configurer le démarrage automatique au boot (silencieux)
-    local startup_cmd
-    startup_cmd=$("$PM2_BIN" startup 2>/dev/null | grep "^sudo env" | head -1)
-    if [[ -n "$startup_cmd" ]]; then
-        info "Activation du démarrage automatique au boot..."
-        eval "$startup_cmd" 2>/dev/null && "$PM2_BIN" save --force 2>/dev/null \
-            && success "Démarrage automatique au boot activé" \
-            || warn "Démarrage auto au boot : exécutez 'pm2 startup' et collez la commande sudo affichée"
-    fi
+    success "Services PM2 enregistrés"
+    echo ""
+    warn "IMPORTANT : Pour activer le redémarrage automatique au boot :"
+    warn "  1. Exécutez : pm2 startup"
+    warn "  2. Copiez-collez la commande 'sudo env...' qui s'affiche"
+    warn "  3. Puis : pm2 save"
 }
 
 # ── Validation basique ────────────────────────────────────────
@@ -613,14 +438,21 @@ print_success() {
     echo -e "${GREEN}${BOLD}   JARVIS-V1.0 installé avec succès !${NC}"
     echo -e "${GREEN}${BOLD}================================================${NC}"
     echo ""
-    echo -e "${BOLD}JARVIS est démarré via PM2 (auto-restart actif) :${NC}"
+    echo -e "${BOLD}Démarrer JARVIS :${NC}"
     echo ""
-    echo -e "  ${CYAN}pm2 status${NC}      — voir l'état des services"
-    echo -e "  ${CYAN}pm2 logs${NC}        — logs en temps réel"
-    echo -e "  ${CYAN}pm2 restart all${NC} — redémarrer tout"
+    echo -e "  ${CYAN}# Avec PM2 (recommandé — auto-restart, démarrage au boot)${NC}"
+    echo -e "  ${CYAN}bash ${REPO_DIR}/pm2-manager.sh start${NC}"
     echo ""
-    echo -e "${BOLD}Si PM2 n'est pas dans votre PATH (nouveau terminal) :${NC}"
-    echo -e "  ${CYAN}source ~/.bashrc${NC}  — recharger le PATH"
+    echo -e "  ${CYAN}# Ou directement (session terminal)${NC}"
+    echo -e "  ${CYAN}bash ${REPO_DIR}/launch-JARVIS.sh${NC}"
+    echo ""
+    echo -e "${BOLD}Si 'pm2: command not found' après l'installation :${NC}"
+    echo -e "  ${CYAN}export PATH=\"\$(npm root -g | sed 's|/node_modules||')/bin:\$PATH\"${NC}"
+    echo -e "  ${CYAN}echo 'export PATH=\"\$(npm root -g | sed '"'"'s|/node_modules||'"'"')/bin:\$PATH\"' >> ~/.bashrc${NC}"
+    echo ""
+    echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
+    echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
+    echo -e "  ${CYAN}pm2 save${NC}"
     echo ""
     echo -e "${BOLD}Services disponibles :${NC}"
     echo -e "  Web UI          →  http://localhost:8501"
@@ -651,12 +483,10 @@ main() {
     detect_os
     install_system_deps
     setup_repo_dir
-    print_banner           # Affiché une seule fois, après le self-restart depuis le repo local
     setup_venv
     install_python_deps
-    clean_chromadb_cache   # Nettoyer avant de démarrer (évite crash SentenceTransformer)
     install_ollama
-    configure_ollama_perf  # Injecter env perf dans le service systemd Ollama
+    configure_ollama_perf
     pull_ollama_models
     setup_env
     install_mobile_deps
