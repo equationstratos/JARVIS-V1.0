@@ -170,11 +170,80 @@ setup_venv() {
 install_python_deps() {
     info "Installation des dépendances Python (peut prendre quelques minutes)..."
     pip install -r requirements.txt --quiet
-    # chromadb est utilisé par web_v2.py mais pas encore dans requirements.txt
-    pip install chromadb --quiet 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
+
     # mistralai est requis pour le serveur TTS Voxtral
     pip install mistralai --quiet 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
+
+    # ── Fix connu : conflit opentelemetry entre chromadb et mistralai ──
+    # chromadb et mistralai tirent des versions incompatibles d'opentelemetry-semantic-conventions.
+    # La solution est de forcer la réinstallation de chromadb APRÈS mistralai pour laisser
+    # pip re-résoudre toutes les dépendances transitives correctement.
+    info "Résolution des dépendances chromadb (opentelemetry)..."
+    pip install --upgrade --force-reinstall chromadb --quiet 2>/dev/null \
+        || warn "chromadb non installé (mémoire vectorielle désactivée)"
+
+    # ── Pré-téléchargement du modèle d'embedding SentenceTransformer ──
+    # web_v2.py utilise all-MiniLM-L6-v2 au démarrage. Si HuggingFace n'est pas accessible
+    # en runtime, le fallback DefaultEmbeddingFunction est utilisé automatiquement.
+    # On tente le téléchargement maintenant pendant l'install où l'internet est disponible.
+    info "Pré-téléchargement du modèle d'embedding (all-MiniLM-L6-v2)..."
+    python3 -c "
+from sentence_transformers import SentenceTransformer
+try:
+    SentenceTransformer('all-MiniLM-L6-v2')
+    print('Modèle d embedding téléchargé avec succès')
+except Exception as e:
+    print(f'Téléchargement impossible ({e}) — fallback automatique au runtime')
+" 2>/dev/null || warn "Modèle d'embedding non téléchargé — le fallback sera utilisé au démarrage"
+
     success "Dépendances Python installées"
+}
+
+# ── Nettoyage des données runtime ChromaDB ────────────────────
+clean_chromadb_cache() {
+    # Si memoire_ia/ existe avec une configuration SentenceTransformer sauvegardée,
+    # ChromaDB va tenter de recharger ce modèle au démarrage → crash si HuggingFace inaccessible.
+    # On supprime uniquement si la collection utilise l'ancienne config ST.
+    local chroma_dir="$REPO_DIR/memoire_ia"
+    if [[ -d "$chroma_dir" ]]; then
+        # Détecter si la DB stocke une config SentenceTransformer
+        local has_st_config=false
+        if python3 -c "
+import sqlite3, sys, os
+db = os.path.join('$chroma_dir', 'chroma.sqlite3')
+if not os.path.exists(db): sys.exit(1)
+try:
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    cur.execute(\"SELECT value FROM collections_metadata WHERE key='hnsw:space' OR value LIKE '%SentenceTransformer%' LIMIT 1\")
+    rows = cur.fetchall()
+    conn.close()
+    # Chercher SentenceTransformer dans la table segments
+    conn2 = sqlite3.connect(db)
+    cur2 = conn2.cursor()
+    cur2.execute(\"SELECT value FROM embeddings_queue LIMIT 1\") if False else None
+    conn2.close()
+except Exception:
+    pass
+# Chercher directement dans le fichier (heuristique)
+with open(db, 'rb') as f:
+    content = f.read()
+    if b'SentenceTransformer' in content:
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+            has_st_config=true
+        fi
+
+        if [[ "$has_st_config" == "true" ]]; then
+            warn "Base ChromaDB avec config SentenceTransformer détectée."
+            warn "Suppression de memoire_ia/ pour éviter un crash au démarrage..."
+            rm -rf "$chroma_dir"
+            success "Cache ChromaDB nettoyé (sera recréé au premier démarrage)"
+        else
+            info "Base ChromaDB existante conservée"
+        fi
+    fi
 }
 
 # ── Ollama ────────────────────────────────────────────────────
@@ -191,7 +260,8 @@ install_ollama() {
     # Démarrer ollama serve si pas actif
     if ! curl -s http://localhost:11434/api/tags &>/dev/null; then
         info "Démarrage du serveur Ollama..."
-        ollama serve &>/dev/null &
+        # Exporter OLLAMA_KEEP_ALIVE pour garder les modèles en RAM entre les requêtes
+        OLLAMA_KEEP_ALIVE=30m ollama serve &>/dev/null &
         OLLAMA_BG_PID=$!
         local waited=0
         while ! curl -s http://localhost:11434/api/tags &>/dev/null; do
@@ -211,15 +281,24 @@ pull_ollama_models() {
 
     pull_model() {
         local model="$1"
-        if ollama list 2>/dev/null | grep -q "^${model}"; then
+        # ollama list affiche "mistral-small3.2:latest" — on cherche juste le nom de base
+        local model_base="${model%%:*}"
+        if ollama list 2>/dev/null | awk '{print $1}' | grep -q "^${model_base}"; then
             success "Modèle $model déjà présent"
         else
-            info "Téléchargement de $model..."
-            if ollama pull "$model"; then
-                success "Modèle $model téléchargé"
-            else
-                warn "Échec du téléchargement de $model. Réessayez: ollama pull $model"
-            fi
+            info "Téléchargement de $model (peut prendre plusieurs minutes)..."
+            local attempt=1
+            while [[ $attempt -le 3 ]]; do
+                if ollama pull "$model"; then
+                    success "Modèle $model téléchargé"
+                    return
+                fi
+                warn "Tentative $attempt/3 échouée pour $model. Nouvelle tentative dans 5s..."
+                sleep 5
+                attempt=$((attempt + 1))
+            done
+            warn "Impossible de télécharger $model après 3 tentatives."
+            warn "Réessayez manuellement : ollama pull $model"
         fi
     }
 
@@ -232,11 +311,24 @@ setup_env() {
     info "Configuration du fichier .env..."
     if [[ -f ".env" ]]; then
         warn ".env déjà présent. Paramètres existants conservés."
-        # Patch LITELLM_LOG=FALSE → WARNING (cause un crash au démarrage de litellm)
+
+        # ── Patch LITELLM_LOG=FALSE → WARNING ──
+        # Le module Python logging n'a pas d'attribut FALSE → crash litellm au démarrage
         if grep -q "^LITELLM_LOG=FALSE" .env 2>/dev/null; then
             sed -i 's|^LITELLM_LOG=FALSE|LITELLM_LOG=WARNING|' .env
             success "Corrigé : LITELLM_LOG=FALSE → WARNING dans .env"
         fi
+
+        # ── Ajout OLLAMA_KEEP_ALIVE si manquant ──
+        # Garde le modèle en RAM entre les requêtes → élimine le cold-start de 10-30s
+        if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
+            echo "" >> .env
+            echo "# Ollama — performances" >> .env
+            echo "OLLAMA_KEEP_ALIVE=30m" >> .env
+            echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
+            success "Ajouté : OLLAMA_KEEP_ALIVE=30m dans .env"
+        fi
+
         return
     fi
 
@@ -255,6 +347,16 @@ setup_env() {
             -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
             -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3|' \
             .env
+    fi
+
+    # ── Paramètres Ollama recommandés pour la latence ──
+    # OLLAMA_KEEP_ALIVE : garde le modèle en RAM entre les requêtes (évite le cold-start)
+    # OLLAMA_API_BASE   : endpoint explicite (évite des résolutions DNS inutiles)
+    if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
+        echo "" >> .env
+        echo "# Ollama — performances" >> .env
+        echo "OLLAMA_KEEP_ALIVE=30m" >> .env
+        echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
     fi
 
     success ".env créé avec les defaults Ollama"
@@ -392,6 +494,32 @@ install_pm2() {
     info "Démarrage des services JARVIS via PM2..."
     "$PM2_BIN" start "$REPO_DIR/ecosystem.config.js" 2>/dev/null || true
     "$PM2_BIN" save --force 2>/dev/null || true
+
+    # ── Vérification que le backend répond effectivement sur :8501 ──
+    info "Attente du démarrage du backend (port 8501)..."
+    local waited=0
+    local backend_ok=false
+    while [[ $waited -lt 45 ]]; do
+        if curl -s http://localhost:8501/health 2>/dev/null | grep -q '"status"'; then
+            backend_ok=true
+            break
+        fi
+        sleep 2
+        waited=$((waited + 2))
+    done
+
+    if [[ "$backend_ok" == "true" ]]; then
+        success "Backend JARVIS répond sur http://localhost:8501"
+        local agents
+        agents=$(curl -s http://localhost:8501/health 2>/dev/null | python3 -c \
+            "import sys,json; d=json.load(sys.stdin); print(f\"{len(d['agents'])} agents chargés\")" 2>/dev/null || echo "")
+        [[ -n "$agents" ]] && success "$agents"
+    else
+        warn "Le backend ne répond pas encore sur :8501 après 45s."
+        warn "Vérifiez les logs : $PM2_BIN logs jarvis-backend --lines 30"
+        warn "Cause probable : premier chargement d'Ollama (modèle en cours de mise en mémoire)"
+    fi
+
     success "Services PM2 démarrés et sauvegardés"
 
     # Configurer le démarrage automatique au boot (silencieux)
@@ -462,6 +590,7 @@ main() {
     setup_repo_dir
     setup_venv
     install_python_deps
+    clean_chromadb_cache       # Nettoyer avant de démarrer (évite crash SentenceTransformer)
     install_ollama
     pull_ollama_models
     setup_env
