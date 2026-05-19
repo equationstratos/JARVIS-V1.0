@@ -214,7 +214,9 @@ configure_ollama_perf() {
 
         # Patcher les variables d'environment
         if [[ -f /etc/systemd/system/ollama.service ]]; then
-            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"\nEnvironment="OLLAMA_MAX_LOADED_MODELS=2"\nEnvironment="OLLAMA_NUM_THREAD='$CPU_CORES'"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_MAX_LOADED_MODELS=2"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i "/^\[Service\]/a Environment=\"OLLAMA_NUM_THREAD=$CPU_CORES\"" /etc/systemd/system/ollama.service 2>/dev/null || true
             sudo systemctl daemon-reload
             sudo systemctl restart ollama
             success "Ollama configuré pour performance (KEEP_ALIVE=-1, MAX_LOADED_MODELS=2, NUM_THREAD=$CPU_CORES)"
@@ -354,6 +356,7 @@ setup_ip_whitelist() {
 
     echo ""
     info "Pour ajouter une IP plus tard : ${BOLD}python main.py --authorize-ip=82.1.2.3${NC}"
+}
 
 # ── App mobile ────────────────────────────────────────────────
 install_mobile_deps() {
