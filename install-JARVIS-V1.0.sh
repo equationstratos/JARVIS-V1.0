@@ -197,6 +197,37 @@ install_ollama() {
     fi
 }
 
+# ── Performance Ollama ────────────────────────────────────────
+configure_ollama_perf() {
+    info "Configuration des performances Ollama..."
+
+    # CPU cores pour OLLAMA_NUM_THREAD
+    CPU_CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo "4")
+
+    # Créer/patcher le fichier d'environment Ollama
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]] && systemctl is-active --quiet ollama; then
+        info "Patchage de /etc/systemd/system/ollama.service..."
+        sudo mkdir -p /etc/systemd/system
+
+        # Sauvegarder l'original si présent
+        [[ -f /etc/systemd/system/ollama.service ]] && sudo cp /etc/systemd/system/ollama.service /etc/systemd/system/ollama.service.bak
+
+        # Patcher les variables d'environment
+        if [[ -f /etc/systemd/system/ollama.service ]]; then
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"\nEnvironment="OLLAMA_MAX_LOADED_MODELS=2"\nEnvironment="OLLAMA_NUM_THREAD='$CPU_CORES'"' /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo systemctl daemon-reload
+            sudo systemctl restart ollama
+            success "Ollama configuré pour performance (KEEP_ALIVE=-1, MAX_LOADED_MODELS=2, NUM_THREAD=$CPU_CORES)"
+        fi
+    else
+        info "Ollama systemd service non trouvé (installation manuelle ?)"
+        info "Définissez ces variables dans votre environnement pour optimiser :"
+        info "  export OLLAMA_KEEP_ALIVE=-1              # garder les modèles en RAM"
+        info "  export OLLAMA_MAX_LOADED_MODELS=2        # 2 modèles en parallèle"
+        info "  export OLLAMA_NUM_THREAD=$CPU_CORES      # utiliser tous les cores CPU"
+    fi
+}
+
 # ── Modèles Ollama ────────────────────────────────────────────
 pull_ollama_models() {
     info "Téléchargement des modèles Ollama (peut prendre du temps, ~5-8 GB)..."
@@ -215,8 +246,8 @@ pull_ollama_models() {
         fi
     }
 
+    pull_model "llama3.2:3b"
     pull_model "mistral-small3.2"
-    pull_model "llama3"
 }
 
 # ── Fichier .env ──────────────────────────────────────────────
@@ -230,17 +261,18 @@ setup_env() {
     cp .env.example .env
 
     # Defaults Ollama (local, gratuit, sans clé API)
+    # Utilise llama3.2:3b (rapide, 20-40 tok/s) et mistral-small3.2 (qualité, 3-8 tok/s)
     if [[ "$OS" == "macOS" ]]; then
         sed -i '' \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3|' \
+            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
             .env
     else
         sed -i \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/mistral-small3.2|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/llama3|' \
+            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
+            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
             .env
     fi
 
@@ -451,6 +483,7 @@ main() {
     setup_venv
     install_python_deps
     install_ollama
+    configure_ollama_perf
     pull_ollama_models
     setup_env
     install_mobile_deps
