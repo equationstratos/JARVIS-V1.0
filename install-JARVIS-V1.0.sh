@@ -20,18 +20,25 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 die()     { error "$*"; exit 1; }
 
-# ── Bannière ──────────────────────────────────────────────────
-echo -e "${BOLD}${CYAN}"
-cat << 'EOF'
-     _   _    _   _____  __   __ ___ ____
-    | | / \  | | |  __ \ \ \ / /|_ _/ ___|
- _  | |/ _ \ | | | |__) | \ V /  | |\___ \
-| |_| / ___ \| |___  _ <   | |   | | ___) |
- \___/_/   \_\_____|_| \_\  |_|  |___|____/
+# ── Bannière (appelée depuis main(), après le self-restart) ───
+print_banner() {
+    echo -e "${BOLD}${CYAN}"
+    cat << 'BANNER'
 
-  Modular Agentic AI Ecosystem — Installer v1.0
-EOF
-echo -e "${NC}"
+      ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗
+      ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝
+      ██║███████║██████╔╝██║   ██║██║███████╗
+ ██   ██║██╔══██║██╔══██╗╚██╗ ██╔╝██║╚════██║
+ ╚█████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║███████║
+  ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝
+
+BANNER
+    echo -e "${NC}${BOLD}  Just A Rather Very Intelligent System${NC}"
+    echo -e "${CYAN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "  ${BOLD}Modular Agentic AI Ecosystem${NC}  —  Installer v1.0"
+    echo -e "${CYAN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+}
 
 # ── Détection OS ──────────────────────────────────────────────
 detect_os() {
@@ -275,6 +282,43 @@ install_ollama() {
     fi
 }
 
+# ── Optimisation Ollama (systemd + env) ───────────────────────
+configure_ollama_perf() {
+    local cpu_cores
+    cpu_cores=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
+    local service_file="/etc/systemd/system/ollama.service"
+
+    # Patcher le service systemd Ollama pour injecter les variables de perf
+    if [[ -f "$service_file" ]]; then
+        info "Optimisation du service Ollama (${cpu_cores} cœurs CPU)..."
+        # Ajouter les variables si absentes dans la section [Service]
+        local needs_reload=false
+        for var in \
+            "OLLAMA_KEEP_ALIVE=-1" \
+            "OLLAMA_MAX_LOADED_MODELS=2" \
+            "OLLAMA_NUM_THREAD=${cpu_cores}"
+        do
+            local key="${var%%=*}"
+            if ! grep -q "Environment=\"${key}=" "$service_file" 2>/dev/null && \
+               ! grep -q "Environment=${key}=" "$service_file" 2>/dev/null; then
+                sudo sed -i "/^\[Service\]/a Environment=\"${var}\"" "$service_file"
+                needs_reload=true
+            fi
+        done
+        if [[ "$needs_reload" == true ]]; then
+            sudo systemctl daemon-reload
+            sudo systemctl restart ollama 2>/dev/null || true
+            sleep 3  # Laisser Ollama redémarrer
+            success "Service Ollama optimisé (${cpu_cores} threads, 2 modèles en RAM)"
+        else
+            success "Service Ollama déjà optimisé"
+        fi
+    else
+        # Pas de systemd (macOS ou installation sans service)
+        info "Pas de service systemd Ollama — paramètres injectés via .env"
+    fi
+}
+
 # ── Modèles Ollama ────────────────────────────────────────────
 pull_ollama_models() {
     info "Téléchargement des modèles Ollama..."
@@ -340,6 +384,13 @@ setup_env() {
             echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
         fi
 
+        # ── OLLAMA_MAX_LOADED_MODELS : garder 2 modèles simultanément en RAM ──
+        if grep -q "^OLLAMA_MAX_LOADED_MODELS" .env 2>/dev/null; then
+            sed -i 's|^OLLAMA_MAX_LOADED_MODELS=.*|OLLAMA_MAX_LOADED_MODELS=2|' .env
+        else
+            echo "OLLAMA_MAX_LOADED_MODELS=2" >> .env
+        fi
+
         return
     fi
 
@@ -362,12 +413,13 @@ setup_env() {
             .env
     fi
 
-    # ── Paramètres Ollama : modèle en RAM permanent, endpoint explicite ──
+    # ── Paramètres Ollama : modèle en RAM permanent, 2 modèles simultanés ──
     if ! grep -q "^OLLAMA_KEEP_ALIVE" .env 2>/dev/null; then
         echo "" >> .env
         echo "# Ollama — performances" >> .env
         echo "OLLAMA_KEEP_ALIVE=-1" >> .env
         echo "OLLAMA_API_BASE=http://localhost:11434" >> .env
+        echo "OLLAMA_MAX_LOADED_MODELS=2" >> .env
     fi
 
     success ".env créé avec les defaults Ollama"
@@ -599,10 +651,12 @@ main() {
     detect_os
     install_system_deps
     setup_repo_dir
+    print_banner           # Affiché une seule fois, après le self-restart depuis le repo local
     setup_venv
     install_python_deps
-    clean_chromadb_cache       # Nettoyer avant de démarrer (évite crash SentenceTransformer)
+    clean_chromadb_cache   # Nettoyer avant de démarrer (évite crash SentenceTransformer)
     install_ollama
+    configure_ollama_perf  # Injecter env perf dans le service systemd Ollama
     pull_ollama_models
     setup_env
     install_mobile_deps
