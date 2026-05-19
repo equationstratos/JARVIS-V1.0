@@ -149,6 +149,13 @@ class Orchestrator:
 
     async def _llm_route(self, user_query: str) -> str:
         """Fallback LLM pour cas ambigus uniquement. Utilise best model disponible."""
+        model = self.override_model or ROUTING_MODEL
+        is_local = model.startswith("ollama/") or model.startswith("ollama_chat/")
+
+        # Pour Ollama : éviter le LLM routing (trop lent pour 20 tokens) → Manager direct
+        if is_local:
+            return "Manager" if "Manager" in self.agents else next(iter(self.agents))
+
         agent_descriptions = "\n".join(
             [
                 f"- {name}: {a.config.get('description', '')}"
@@ -162,19 +169,16 @@ class Orchestrator:
             f"Respond with ONLY the agent name, nothing else."
         )
         try:
-            # Essayer avec Claude Opus d'abord (meilleur reasoning)
-            model = self.override_model or ROUTING_MODEL
             resp = await litellm.acompletion(
                 model=model,
                 messages=[{"role": "user", "content": routing_prompt}],
                 max_tokens=20,
                 temperature=0.0,
-                timeout=5,
+                timeout=15,
             )
             choice = resp.choices[0].message.content.strip().split()[0].strip(".,!?'\"")
             return choice if choice in self.agents else "Manager"
         except Exception as e:
-            # Fallback gracieux
             print(f"Routing LLM error: {e}, using Manager")
             return "Manager"
 

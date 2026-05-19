@@ -110,7 +110,7 @@ Respond with ONLY a number between 0 and 1."""
                 messages=[{"role": "user", "content": validation_prompt}],
                 max_tokens=10,
                 temperature=0.0,
-                timeout=5,
+                timeout=30,
             )
             score_str = result.choices[0].message.content.strip()
             score = float(re.search(r"0\.\d+|1\.0?|[0-1]", score_str).group(0))

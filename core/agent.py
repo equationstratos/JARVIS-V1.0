@@ -30,6 +30,26 @@ FORMAT_INSTRUCTIONS = (
 )
 
 
+OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+
+# Models connus qui supportent le tool calling sous Ollama
+OLLAMA_TOOL_CAPABLE = {
+    "mistral-small3.2", "mistral", "mistral-nemo", "mistral-large",
+    "llama3.1", "llama3.2", "llama3-groq-tool-use", "qwen2.5",
+    "qwen2", "hermes3", "command-r", "command-r-plus",
+}
+
+
+def _is_ollama(model: str) -> bool:
+    return model.startswith("ollama/") or model.startswith("ollama_chat/")
+
+
+def _ollama_supports_tools(model: str) -> bool:
+    """Returns True only for Ollama models known to handle tool calling correctly."""
+    base = model.split("/")[-1].split(":")[0].lower()
+    return any(capable in base for capable in OLLAMA_TOOL_CAPABLE)
+
+
 class Agent:
     def __init__(self, config_path: str, cache_manager: Optional[CacheManager] = None):
         with open(config_path, "r") as f:
@@ -51,6 +71,29 @@ class Agent:
         # Validator et Cache
         self.validator = ResponseValidator(self.model)
         self.cache_manager = cache_manager
+
+    def _build_litellm_kwargs(self, model: str, messages, stream: bool = False, **extra) -> dict:
+        """Construit les kwargs litellm avec optimisations Ollama."""
+        kwargs: dict = {
+            "model": model,
+            "messages": messages,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            **extra,
+        }
+        if stream:
+            kwargs["stream"] = True
+        if _is_ollama(model):
+            kwargs["api_base"] = OLLAMA_API_BASE
+            # Ollama doit charger le modèle en RAM → timeout généreux
+            kwargs["timeout"] = 180
+            # Tools : seulement si le modèle les supporte vraiment
+            if "tools" in kwargs and not _ollama_supports_tools(model):
+                kwargs.pop("tools", None)
+                kwargs.pop("tool_choice", None)
+        else:
+            kwargs.setdefault("timeout", 60)
+        return kwargs
 
     def _setup_tools(self):
         tools = []
@@ -268,15 +311,12 @@ class Agent:
         messages = self._build_messages(prompt, history, bb_data)
 
         try:
-            response = await litellm.acompletion(
-                model=active_model,
-                messages=messages,
+            kw = self._build_litellm_kwargs(
+                active_model, messages,
                 tools=self.tools,
                 tool_choice="auto" if self.tools else None,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                timeout=60,
             )
+            response = await litellm.acompletion(**kw)
         except Exception as e:
             return f"⚠ Erreur d'exécution : {str(e)}"
 
@@ -297,9 +337,8 @@ class Agent:
                     "content": result,
                 })
             try:
-                final = await litellm.acompletion(
-                    model=active_model, messages=messages, timeout=60
-                )
+                kw2 = self._build_litellm_kwargs(active_model, messages)
+                final = await litellm.acompletion(**kw2)
                 content = final.choices[0].message.content or "Tâche traitée."
             except Exception as e:
                 return f"⚠ Erreur après tool : {str(e)}"
@@ -308,8 +347,8 @@ class Agent:
             if not content or content.strip() in ("", "{}"):
                 return "Aucune réponse générée."
 
-        # Validation optionnelle
-        if self.enable_validation:
+        # Validation : skip pour Ollama (évite un 2e appel LLM local)
+        if self.enable_validation and not _is_ollama(active_model):
             content, validation = await self.validator.validate_and_improve(
                 prompt, content, self.name, max_retries=1
             )
@@ -330,23 +369,39 @@ class Agent:
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Yield {type: 'token'|'tool'|'done'|'error', data: ...}"""
         active_model = model_override or self.model
+        is_local = _is_ollama(active_model)
         bb_data = await blackboard.get_all()
         messages = self._build_messages(prompt, history, bb_data)
 
-        try:
-            stream = await litellm.acompletion(
-                model=active_model,
-                messages=messages,
-                tools=self.tools,
-                tool_choice="auto" if self.tools else None,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                stream=True,
-                timeout=60,
-            )
-        except Exception as e:
-            yield {"type": "error", "data": f"Init stream error: {e}"}
-            return
+        # Pour Ollama : on tente le streaming, avec fallback non-streaming si déconnexion
+        max_attempts = 2 if is_local else 1
+        for attempt in range(max_attempts):
+            try:
+                kw = self._build_litellm_kwargs(
+                    active_model, messages, stream=True,
+                    tools=self.tools,
+                    tool_choice="auto" if self.tools else None,
+                )
+                stream = await litellm.acompletion(**kw)
+                break  # succès
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    await asyncio.sleep(1)
+                    continue
+                # Dernier recours : fallback non-streaming
+                if is_local:
+                    try:
+                        kw_ns = self._build_litellm_kwargs(active_model, messages)
+                        resp = await litellm.acompletion(**kw_ns)
+                        text = resp.choices[0].message.content or ""
+                        yield {"type": "token", "data": text}
+                        yield {"type": "done", "data": text}
+                        return
+                    except Exception as e2:
+                        yield {"type": "error", "data": f"Ollama error: {e2}"}
+                        return
+                yield {"type": "error", "data": f"Init stream error: {e}"}
+                return
 
         # Accumulateurs
         full_content = []
@@ -377,7 +432,11 @@ class Agent:
                             if tc.function.arguments:
                                 tool_calls_buf[idx]["args"] += tc.function.arguments
         except Exception as e:
-            yield {"type": "error", "data": f"Stream error: {e}"}
+            # Si on a déjà reçu des tokens, on retourne ce qu'on a plutôt qu'une erreur
+            if full_content:
+                yield {"type": "done", "data": "".join(full_content)}
+            else:
+                yield {"type": "error", "data": f"Stream error: {e}"}
             return
 
         # Pas de tool calls : c'est terminé
@@ -421,19 +480,21 @@ class Agent:
                 "content": result,
             })
 
-        # Stream final
+        # Stream final après tool calls
         final_content = []
         try:
-            final_stream = await litellm.acompletion(
-                model=active_model, messages=messages, stream=True, timeout=60
-            )
+            kw_final = self._build_litellm_kwargs(active_model, messages, stream=True)
+            final_stream = await litellm.acompletion(**kw_final)
             async for chunk in final_stream:
                 delta = chunk.choices[0].delta if chunk.choices else None
                 if delta and getattr(delta, "content", None):
                     final_content.append(delta.content)
                     yield {"type": "token", "data": delta.content}
         except Exception as e:
-            yield {"type": "error", "data": f"Final stream error: {e}"}
+            if final_content:
+                yield {"type": "done", "data": "".join(final_content)}
+            else:
+                yield {"type": "error", "data": f"Final stream error: {e}"}
             return
 
         yield {"type": "done", "data": "".join(final_content)}
