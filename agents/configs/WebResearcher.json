@@ -11,6 +11,7 @@
         "web_fetch",
         "code_executor"
     ],
-    "history_limit": 10,
+    "history_limit": 6,
+    "max_tokens": 512,
     "inherit_model": false
 }
