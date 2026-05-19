@@ -63,7 +63,7 @@ class Agent:
         self.temperature = self.config.get("temperature", 0.3)
         self.max_tokens = self.config.get("max_tokens", 1024)
         self.routing_keywords = self.config.get("routing_keywords", [])
-        self.enable_validation = self.config.get("enable_validation", True)
+        self.enable_validation = self.config.get("enable_validation", False)
         self.tools = self._setup_tools()
         # Cache de la dernière sérialisation blackboard
         self._bb_cache_key: Optional[int] = None
@@ -74,12 +74,13 @@ class Agent:
 
     def _build_litellm_kwargs(self, model: str, messages, stream: bool = False, **extra) -> dict:
         """Construit les kwargs litellm avec optimisations Ollama."""
+        # Strip None values — don't send tools=null or tool_choice=null to cloud APIs
         kwargs: dict = {
             "model": model,
             "messages": messages,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            **extra,
+            **{k: v for k, v in extra.items() if v is not None},
         }
         if stream:
             kwargs["stream"] = True

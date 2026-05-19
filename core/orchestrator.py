@@ -174,7 +174,7 @@ class Orchestrator:
                 messages=[{"role": "user", "content": routing_prompt}],
                 max_tokens=20,
                 temperature=0.0,
-                timeout=15,
+                timeout=5,
             )
             choice = resp.choices[0].message.content.strip().split()[0].strip(".,!?'\"")
             return choice if choice in self.agents else "Manager"
