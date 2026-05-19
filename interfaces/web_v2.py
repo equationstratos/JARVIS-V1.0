@@ -432,8 +432,13 @@ Now generate the suggestions:"""
 
 # 1. Configuration de la base de données (en local sur ton VPS)
 chroma_client = chromadb.PersistentClient(path="./memoire_ia")
-# Utilise un modèle d'embedding léger pour transformer le texte en vecteurs
-sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+# Utilise ChromaDB's default embedding function (no external downloads required)
+try:
+    sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+except Exception as e:
+    print(f"[WARNING] Failed to load SentenceTransformer: {e}")
+    print("[INFO] Using ChromaDB default embedding function")
+    sentence_transformer_ef = embedding_functions.DefaultEmbeddingFunction()
 collection = chroma_client.get_or_create_collection(name="experience_agent", embedding_function=sentence_transformer_ef)
 
 def se_souvenir(requete_actuelle):
