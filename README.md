@@ -1,3 +1,11 @@
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-49-56" src="https://github.com/user-attachments/assets/0cc01029-e218-470c-9910-1591a9fa4f6c" />
+<img width="1368" height="678" alt="Capture d’écran du 2026-05-12 19-37-04" src="https://github.com/user-attachments/assets/db0505b8-9bd1-4d65-8a5b-f7b0bf9351ef" />
+<img width="1361" height="689" alt="Capture d’écran du 2026-05-11 03-49-42" src="https://github.com/user-attachments/assets/4f03d623-f97f-4ad3-a20a-a54b4f3e9843" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-51-04" src="https://github.com/user-attachments/assets/03416bbd-4dee-42e3-8055-37b119643d03" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-50-35" src="https://github.com/user-attachments/assets/139ac4ef-33a9-42bd-b5e6-78daa0532545" />
+
+
+
 # JARVIS-V1.0 — Modular Agentic AI Ecosystem
 
 > Orchestrateur d'agents IA modulaires avec interfaces Web, Mobile et Terminal.  
