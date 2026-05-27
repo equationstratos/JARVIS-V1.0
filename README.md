@@ -1,3 +1,14 @@
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-06-31" src="https://github.com/user-attachments/assets/99098651-dd0c-40ef-838b-c9edf6684189" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-06-17" src="https://github.com/user-attachments/assets/14b96d72-ec1d-4da0-badd-d8c32f936a60" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-05-54" src="https://github.com/user-attachments/assets/99a4d788-4001-434e-b4fd-5f6df529b3e5" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-05-08" src="https://github.com/user-attachments/assets/3cef7dfd-0bca-4230-8eb4-0bb05a29b2b1" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-04-45" src="https://github.com/user-attachments/assets/2d041661-b7cd-4b4e-b077-1c9a0305d0ec" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-03-56" src="https://github.com/user-attachments/assets/81850809-0d0b-4ec2-b41a-d8c5f9a226ba" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-03-43" src="https://github.com/user-attachments/assets/e69c1f31-cb2a-40ca-a3fe-8dc6e175514f" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-03-03" src="https://github.com/user-attachments/assets/e91955cd-5d0f-4257-9a33-3f17c87fda73" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-02-25" src="https://github.com/user-attachments/assets/52b60a40-c0ea-4dff-871b-b425dc827f92" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-00-54" src="https://github.com/user-attachments/assets/c026a963-a6dd-4057-b08e-5e88d8ae32ed" />
+<img width="1366" height="768" alt="Capture d’écran du 2026-05-27 06-00-40" src="https://github.com/user-attachments/assets/fadaf001-7ded-449a-a6f0-c6ab3d0bd12c" />
 <img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-49-56" src="https://github.com/user-attachments/assets/0cc01029-e218-470c-9910-1591a9fa4f6c" />
 <img width="1368" height="678" alt="Capture d’écran du 2026-05-12 19-37-04" src="https://github.com/user-attachments/assets/db0505b8-9bd1-4d65-8a5b-f7b0bf9351ef" />
 <img width="1361" height="689" alt="Capture d’écran du 2026-05-11 03-49-42" src="https://github.com/user-attachments/assets/4f03d623-f97f-4ad3-a20a-a54b4f3e9843" />
