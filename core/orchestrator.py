@@ -18,7 +18,10 @@ from dotenv import load_dotenv
 from core.blackboard import Blackboard
 from core.agent import Agent
 from utils.cache_manager import CacheManager
-from utils.semantic_router import SemanticRouter
+if os.getenv("ENABLE_VECTOR_ROUTING", "false").lower() == "true":
+    from utils.semantic_router import SemanticRouter
+else:
+    SemanticRouter = None  # type: ignore
 
 load_dotenv()
 
@@ -75,7 +78,7 @@ class Orchestrator:
         self.blackboard = Blackboard()
         self.agents_dir = agents_dir
         self.cache_manager = cache_manager or CacheManager()
-        self.semantic_router = SemanticRouter()
+        self.semantic_router = SemanticRouter() if SemanticRouter is not None else None
         self.override_model: Optional[str] = None
         self._route_cache: Dict[str, str] = {}  # Cache des décisions de routage
         self.load_agents(agents_dir)
@@ -96,7 +99,8 @@ class Orchestrator:
 
     async def initialize_semantic_router(self):
         """Initialise le routeur sémantique avec tous les agents"""
-        await self.semantic_router.initialize_agents(self.agents)
+        if self.semantic_router is not None:
+            await self.semantic_router.initialize_agents(self.agents)
 
     def _fast_route(self, user_query: str) -> Optional[str]:
         """Routage instantané par mots-clés + keywords des agents. Retourne None si ambigu."""
@@ -140,7 +144,7 @@ class Orchestrator:
             # Un agent qui domine clairement
             chosen = max(scores, key=scores.get)
         else:
-            # Ambiguïté (plusieurs agents avec 1 point chacun) → LLM
+            # Ambiguité (plusieurs agents avec 1 point chacun) → LLM
             return None
 
         if chosen:
@@ -194,7 +198,7 @@ class Orchestrator:
         target = self._fast_route(user_query)
         if target is None:
             # 3. Routage sémantique (si disponible, ~50ms)
-            if self.semantic_router.is_available():
+            if self.semantic_router is not None and self.semantic_router.is_available():
                 semantic_target = await self.semantic_router.route_single(
                     user_query, confidence_threshold=0.6
                 )
@@ -212,25 +216,3 @@ class Orchestrator:
             await self.cache_manager.cache_routing_decision(user_query, target, ttl=7200)
 
         return self.agents[target]
-
-    async def route(
-        self, user_query: str, history: List[Dict[str, str]]
-    ) -> str:
-        """API non-streaming (compatibilité)."""
-        agent = await self._resolve_agent(user_query)
-        return await agent.execute(
-            user_query, history, self.blackboard,
-            model_override=self.override_model,
-        )
-
-    async def route_stream(
-        self, user_query: str, history: List[Dict[str, str]]
-    ) -> AsyncGenerator[Dict[str, Any], None]:
-        """API streaming. Yield des dicts {type, data}."""
-        agent = await self._resolve_agent(user_query)
-        yield {"type": "agent", "data": agent.name}
-        async for chunk in agent.execute_stream(
-            user_query, history, self.blackboard,
-            model_override=self.override_model,
-        ):
-            yield chunk
