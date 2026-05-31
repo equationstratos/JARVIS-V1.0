@@ -57,7 +57,7 @@ MOBILE_PID=""
 
 # ── Attente port ouvert ───────────────────────────────────────
 wait_for_port() {
-    local port="$1" name="$2" max_wait=30
+    local port="$1" name="$2" max_wait="${3:-30}"
     local i=0
     while ! (echo > /dev/tcp/127.0.0.1/"$port") 2>/dev/null; do
         sleep 1
@@ -125,7 +125,7 @@ info "Démarrage du backend JARVIS..."
 python "$SCRIPT_DIR/main.py" --web >"$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 
-if wait_for_port 8501 "Backend"; then
+if wait_for_port 8501 "Backend" 120; then
     success "Backend prêt sur :8501 (PID $BACKEND_PID)"
 else
     error "Le backend n'a pas démarré. Consultez: $LOG_DIR/backend.log"
