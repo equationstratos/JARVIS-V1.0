@@ -49,6 +49,99 @@ detect_os() {
     info "OS détecté: $OS"
 }
 
+# ── Détection Hardware ────────────────────────────────────────
+detect_hardware() {
+    info "Détection du matériel..."
+
+    # RAM totale en MB
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        TOTAL_RAM_MB=$(( $(sysctl -n hw.memsize 2>/dev/null || echo 4294967296) / 1024 / 1024 ))
+    else
+        TOTAL_RAM_MB=$(awk '/MemTotal/ { print int($2/1024) }' /proc/meminfo 2>/dev/null || echo 4096)
+    fi
+    TOTAL_RAM_GB=$(( TOTAL_RAM_MB / 1024 ))
+    [[ $TOTAL_RAM_GB -lt 1 ]] && TOTAL_RAM_GB=1
+
+    # VRAM GPU — détection optionnelle (nvidia)
+    VRAM_GB=0
+    if has_cmd nvidia-smi; then
+        local vram_mb
+        vram_mb=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+        [[ "$vram_mb" =~ ^[0-9]+$ ]] && VRAM_GB=$(( vram_mb / 1024 ))
+    fi
+
+    # Espace disque libre dans le répertoire courant (en GB)
+    DISK_FREE_GB=$(df -BG "${HOME}" 2>/dev/null | awk 'NR==2{gsub("G",""); print int($4)}' || echo 20)
+    [[ $DISK_FREE_GB -lt 1 ]] && DISK_FREE_GB=1
+
+    info "  RAM totale   : ${TOTAL_RAM_GB} GB"
+    [[ $VRAM_GB -gt 0 ]] && info "  VRAM GPU     : ${VRAM_GB} GB"
+    info "  Disque libre : ${DISK_FREE_GB} GB"
+}
+
+# ── Sélection automatique du modèle Ollama adapté au matériel ─
+select_ollama_models() {
+    # La mémoire effective = VRAM si GPU dispo, sinon RAM système
+    local effective_gb=$TOTAL_RAM_GB
+    [[ $VRAM_GB -gt $effective_gb ]] && effective_gb=$VRAM_GB
+
+    # Choix du modèle selon la RAM effective
+    #   tinyllama:1.1b   ~  638 MB téléchargement,  ~0.8 GB RAM
+    #   llama3.2:1b      ~ 1.3 GB téléchargement,   ~1.5 GB RAM
+    #   llama3.2:3b      ~ 2.0 GB téléchargement,   ~2.5 GB RAM
+    #   mistral-small3.2 ~15.0 GB téléchargement,   ~16  GB RAM
+    if [[ $effective_gb -lt 3 ]]; then
+        PRIMARY_MODEL="tinyllama:1.1b"
+        FALLBACK_MODEL="tinyllama:1.1b"
+        MAX_LOADED_MODELS=1
+        HW_TIER="minimal (< 3 GB RAM) — tinyllama:1.1b"
+        MIN_DISK_GB=2
+    elif [[ $effective_gb -lt 6 ]]; then
+        PRIMARY_MODEL="llama3.2:1b"
+        FALLBACK_MODEL="llama3.2:1b"
+        MAX_LOADED_MODELS=1
+        HW_TIER="léger (3-6 GB RAM) — llama3.2:1b"
+        MIN_DISK_GB=3
+    elif [[ $effective_gb -lt 10 ]]; then
+        PRIMARY_MODEL="llama3.2:3b"
+        FALLBACK_MODEL="llama3.2:3b"
+        MAX_LOADED_MODELS=1
+        HW_TIER="standard (6-10 GB RAM) — llama3.2:3b"
+        MIN_DISK_GB=4
+    elif [[ $effective_gb -lt 20 ]]; then
+        PRIMARY_MODEL="llama3.2:3b"
+        FALLBACK_MODEL="llama3.2:3b"
+        MAX_LOADED_MODELS=2
+        HW_TIER="confortable (10-20 GB RAM) — llama3.2:3b"
+        MIN_DISK_GB=4
+    else
+        PRIMARY_MODEL="llama3.2:3b"
+        FALLBACK_MODEL="mistral-small3.2"
+        MAX_LOADED_MODELS=2
+        HW_TIER="haute performance (> 20 GB RAM) — llama3.2:3b + mistral-small3.2"
+        MIN_DISK_GB=20
+    fi
+
+    # Vérification espace disque — rétrograder si insuffisant
+    if [[ $DISK_FREE_GB -lt $MIN_DISK_GB ]]; then
+        warn "Espace disque insuffisant (${DISK_FREE_GB} GB libre, ~${MIN_DISK_GB} GB requis)"
+        PRIMARY_MODEL="tinyllama:1.1b"
+        FALLBACK_MODEL="tinyllama:1.1b"
+        MAX_LOADED_MODELS=1
+        HW_TIER="minimal (disque limité < ${MIN_DISK_GB} GB)"
+    fi
+
+    echo ""
+    echo -e "${BOLD}${CYAN}┌─ Profil matériel détecté ──────────────────────────────┐${NC}"
+    echo -e "${BOLD}${CYAN}│${NC}  ${HW_TIER}"
+    echo -e "${BOLD}${CYAN}│${NC}  Modèle principal : ${BOLD}${PRIMARY_MODEL}${NC}"
+    [[ "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && \
+    echo -e "${BOLD}${CYAN}│${NC}  Modèle fallback  : ${BOLD}${FALLBACK_MODEL}${NC}"
+    echo -e "${BOLD}${CYAN}│${NC}  Modèles en RAM   : ${MAX_LOADED_MODELS}"
+    echo -e "${BOLD}${CYAN}└────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+}
+
 # ── Vérification d'une commande ───────────────────────────────
 has_cmd() { command -v "$1" &>/dev/null; }
 
@@ -222,52 +315,75 @@ configure_ollama_perf() {
     # CPU cores pour OLLAMA_NUM_THREAD
     CPU_CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo "4")
 
+    # Sur machines < 6 GB RAM : garder 1 seul modèle chargé pour éviter le swap
+    local max_loaded="${MAX_LOADED_MODELS:-1}"
+
     # Créer/patcher le fichier d'environment Ollama
-    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]] && systemctl is-active --quiet ollama; then
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]] && systemctl is-active --quiet ollama 2>/dev/null; then
         info "Patchage de /etc/systemd/system/ollama.service..."
         sudo mkdir -p /etc/systemd/system
 
         # Sauvegarder l'original si présent
-        [[ -f /etc/systemd/system/ollama.service ]] && sudo cp /etc/systemd/system/ollama.service /etc/systemd/system/ollama.service.bak
+        [[ -f /etc/systemd/system/ollama.service ]] && \
+            sudo cp /etc/systemd/system/ollama.service /etc/systemd/system/ollama.service.bak
 
-        # Patcher les variables d'environment
+        # Patcher les variables d'environment (supprimer les anciennes entrées d'abord)
         if [[ -f /etc/systemd/system/ollama.service ]]; then
-            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"' /etc/systemd/system/ollama.service 2>/dev/null || true
-            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_MAX_LOADED_MODELS=2"' /etc/systemd/system/ollama.service 2>/dev/null || true
-            sudo sed -i "/^\[Service\]/a Environment=\"OLLAMA_NUM_THREAD=$CPU_CORES\"" /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i '/OLLAMA_KEEP_ALIVE\|OLLAMA_MAX_LOADED\|OLLAMA_NUM_THREAD/d' \
+                /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i '/^\[Service\]/a Environment="OLLAMA_KEEP_ALIVE=-1"' \
+                /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i "/^\[Service\]/a Environment=\"OLLAMA_MAX_LOADED_MODELS=${max_loaded}\"" \
+                /etc/systemd/system/ollama.service 2>/dev/null || true
+            sudo sed -i "/^\[Service\]/a Environment=\"OLLAMA_NUM_THREAD=${CPU_CORES}\"" \
+                /etc/systemd/system/ollama.service 2>/dev/null || true
             sudo systemctl daemon-reload
             sudo systemctl restart ollama
-            success "Ollama configuré pour performance (KEEP_ALIVE=-1, MAX_LOADED_MODELS=2, NUM_THREAD=$CPU_CORES)"
+            success "Ollama configuré : KEEP_ALIVE=-1, MAX_LOADED_MODELS=${max_loaded}, NUM_THREAD=${CPU_CORES}"
         fi
     else
-        info "Ollama systemd service non trouvé (installation manuelle ?)"
-        info "Définissez ces variables dans votre environnement pour optimiser :"
-        info "  export OLLAMA_KEEP_ALIVE=-1              # garder les modèles en RAM"
-        info "  export OLLAMA_MAX_LOADED_MODELS=2        # 2 modèles en parallèle"
-        info "  export OLLAMA_NUM_THREAD=$CPU_CORES      # utiliser tous les cores CPU"
+        info "Ollama systemd service non trouvé — définissez ces variables dans votre shell :"
+        info "  export OLLAMA_KEEP_ALIVE=-1"
+        info "  export OLLAMA_MAX_LOADED_MODELS=${max_loaded}"
+        info "  export OLLAMA_NUM_THREAD=${CPU_CORES}"
     fi
 }
 
 # ── Modèles Ollama ────────────────────────────────────────────
 pull_ollama_models() {
-    info "Téléchargement des modèles Ollama (peut prendre du temps, ~5-8 GB)..."
+    # Construire la liste des modèles à télécharger (dédupliquée)
+    local models_to_pull=("$PRIMARY_MODEL")
+    [[ "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && models_to_pull+=("$FALLBACK_MODEL")
+
+    # Calculer la taille approximative pour informer l'utilisateur
+    local total_size="?"
+    case "$PRIMARY_MODEL" in
+        tinyllama*)        total_size="~700 MB" ;;
+        llama3.2:1b*)      total_size="~1.3 GB" ;;
+        llama3.2:3b*)      total_size="~2 GB" ;;
+    esac
+    [[ "$FALLBACK_MODEL" == "mistral-small3.2" ]] && total_size="~17 GB (llama3.2:3b + mistral-small3.2)"
+
+    info "Téléchargement des modèles Ollama (${total_size})..."
 
     pull_model() {
         local model="$1"
-        if ollama list 2>/dev/null | grep -q "^${model}"; then
+        # ollama list affiche "nom:tag   ..." — on vérifie le début de ligne
+        if ollama list 2>/dev/null | awk '{print $1}' | grep -qx "${model}"; then
             success "Modèle $model déjà présent"
         else
             info "Téléchargement de $model..."
             if ollama pull "$model"; then
                 success "Modèle $model téléchargé"
             else
-                warn "Échec du téléchargement de $model. Réessayez: ollama pull $model"
+                warn "Échec du téléchargement de $model. Réessayez : ollama pull $model"
             fi
         fi
     }
 
-    pull_model "llama3.2:3b"
-    pull_model "mistral-small3.2"
+    for m in "${models_to_pull[@]}"; do
+        pull_model "$m"
+    done
 }
 
 # ── Fichier .env ──────────────────────────────────────────────
@@ -280,19 +396,21 @@ setup_env() {
 
     cp .env.example .env
 
-    # Defaults Ollama (local, gratuit, sans clé API)
-    # Utilise llama3.2:3b (rapide, 20-40 tok/s) et mistral-small3.2 (qualité, 3-8 tok/s)
+    # Modèles sélectionnés automatiquement selon le matériel détecté
+    local default_model="ollama/${PRIMARY_MODEL}"
+    local fallback_model="ollama/${FALLBACK_MODEL}"
+
     if [[ "$OS" == "macOS" ]]; then
         sed -i '' \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
+            -e "s|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=${default_model}|" \
+            -e "s|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=${default_model}|" \
+            -e "s|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=${fallback_model}|" \
             .env
     else
         sed -i \
-            -e 's|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=ollama/llama3.2:3b|' \
-            -e 's|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=ollama/llama3.2:3b|' \
-            -e 's|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=ollama/mistral-small3.2|' \
+            -e "s|^JARVIS_DEFAULT_MODEL=.*|JARVIS_DEFAULT_MODEL=${default_model}|" \
+            -e "s|^JARVIS_ROUTING_MODEL=.*|JARVIS_ROUTING_MODEL=${default_model}|" \
+            -e "s|^JARVIS_FALLBACK_MODEL=.*|JARVIS_FALLBACK_MODEL=${fallback_model}|" \
             .env
     fi
 
@@ -456,6 +574,9 @@ print_success() {
     echo -e "${GREEN}${BOLD}   JARVIS-V1.0 installé avec succès !${NC}"
     echo -e "${GREEN}${BOLD}================================================${NC}"
     echo ""
+    echo -e "${BOLD}Profil matériel :${NC} ${HW_TIER}"
+    echo -e "${BOLD}Modèle LLM      :${NC} ${PRIMARY_MODEL}"
+    echo ""
     echo -e "${BOLD}Démarrer JARVIS :${NC}"
     echo ""
     echo -e "  ${CYAN}# Avec PM2 (recommandé — auto-restart, démarrage au boot)${NC}"
@@ -499,6 +620,8 @@ print_success() {
 # ── Point d'entrée ────────────────────────────────────────────
 main() {
     detect_os
+    detect_hardware
+    select_ollama_models
     install_system_deps
     setup_repo_dir
     setup_venv
