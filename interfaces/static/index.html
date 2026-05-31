@@ -1474,32 +1474,9 @@ body.live-mode #vocal-effects-container {
         <div class="sb-section" style="padding-top:14px;">
             <div class="sb-label">Modèle actif</div>
             <select class="cyber-select" id="model-select">
-                <!-- ═══ OPEN SOURCE LOCAL (24GB VRAM Optimized) ═══ -->
-                <optgroup label="── 🖥️ Ollama Local (24GB VRAM)">
-                    <!-- Raisonnement Long & Planification -->
-                    <option value="ollama/deepseek-r1:70b">DeepSeek-R1 70B (⭐ Long Reasoning - Quantized)</option>
-                    <option value="ollama/qwen2.5:72b">Qwen 2.5 72B (Multilingue - Planning)</option>
-                    <option value="ollama/llama3.1:70b">Llama 3.1 70B (Open - Raisonnement)</option>
-                    <option value="ollama/mixtral:8x22b">Mixtral 8x22B MoE (Expert Mixture)</option>
-
-                    <!-- Mistral Locaux (tes modèles existants) -->
-                    <option value="ollama/magistral:24b">🔥 Magistral 24B (Reasoning Spécialisé)</option>
-                    <option value="ollama/devstral:24b">DevStral 24B (Code & Logic)</option>
-                    <option value="ollama/devstral-small-2:24b">DevStral Small 2 24B (Fast Code)</option>
-                    <option value="ollama/mathstral:7b">MathStral 7B (Math & Planning)</option>
-
-                    <!-- Open Source Standard -->
-                    <option value="ollama/neural-chat:7b">Neural Chat 7B (Agentique)</option>
-                    <option value="ollama/mistral:7b">Mistral 7B Instruct</option>
-                    <option value="ollama/mistral:8x7b">Mistral 8x7B MoE</option>
-                    <option value="ollama/llama3">Llama 3</option>
-                    <option value="ollama/llama2:70b">Llama 2 70B</option>
-                    <option value="ollama/dolphin-mixtral:8x7b">Dolphin Mixtral (Reasoning)</option>
-                    <option value="ollama/openchat:7b">OpenChat 7B</option>
-                    <option value="ollama/phi:3.5">Phi 3.5 (Léger - Edge)</option>
-                    <option value="ollama/nemotron3:33b">Nemotron3 33B</option>
-                    <option value="ollama/mistral-small3.2">Mistral Small 3.2</option>
-                    <option value="ollama/gemma4">Gemma 4</option>
+                <!-- Section Ollama dynamique — remplie par loadLocalModels() -->
+                <optgroup label="── 🖥️ Ollama Local" id="ollama-optgroup">
+                    <option value="" disabled id="ollama-loading-opt">⏳ Chargement modèles locaux...</option>
                 </optgroup>
 
                 <!-- ═══ MISTRAL AI ═══ -->
@@ -4159,12 +4136,14 @@ function renderSettings() {
     html += '</div><div class="settings-pane" id="settings-pane">' + renderSettingsPane(currentSettingsTab) + '</div></div>';
     dom.menuBody.innerHTML = html;
     if (currentSettingsTab === 'agents') loadAgentsList();
+    if (currentSettingsTab === 'chat') refreshInstalledModelsList();
 }
 function switchSettingsTab(tabId) {
     currentSettingsTab = tabId;
     document.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
     document.getElementById('settings-pane').innerHTML = renderSettingsPane(tabId);
     if (tabId === 'agents') loadAgentsList();
+    if (tabId === 'chat') refreshInstalledModelsList();
 }
 window.switchSettingsTab = switchSettingsTab;
 
@@ -4205,6 +4184,23 @@ function renderSettingsPane(tab) {
                     <option value="en" ${settings.chat.forcedLanguage==='en'?'selected':''}>ENGLISH</option>
                 </select>
             </div>
+        </div>
+        <div class="setting-card">
+            <label class="s-label">⬇ TÉLÉCHARGER UN MODÈLE OLLAMA</label>
+            <div class="s-desc" style="margin-bottom:8px;">Entrez un nom de modèle Ollama (ex: <code>llama3.2:3b</code>, <code>mistral:7b</code>, <code>phi3:mini</code>)</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="cyber-input" id="pull-model-input" placeholder="ex: llama3.2:3b" style="flex:1;padding:6px 10px;background:#0a1525;border:1px solid var(--border);color:var(--accent);border-radius:4px;font-family:inherit;font-size:0.8rem;">
+                <button class="menu-btn primary" onclick="pullOllamaModel(document.getElementById('pull-model-input').value,'pull-progress-bar','pull-status')" style="white-space:nowrap;">⬇ PULL</button>
+            </div>
+            <progress id="pull-progress-bar" max="100" value="0" style="display:none;width:100%;height:6px;margin-bottom:6px;accent-color:var(--accent);"></progress>
+            <div id="pull-status" style="font-size:0.75rem;color:var(--accent-dim);min-height:1.2em;"></div>
+        </div>
+        <div class="setting-card">
+            <label class="s-label">🗑 MODÈLES LOCAUX INSTALLÉS</label>
+            <div id="installed-models-list" style="max-height:180px;overflow-y:auto;margin-top:6px;">
+                <div class="s-desc">⏳ Chargement...</div>
+            </div>
+            <button class="menu-btn" style="margin-top:8px;font-size:0.75rem;" onclick="refreshInstalledModelsList()">↺ RAFRAÎCHIR</button>
         </div>`;
     if (tab === 'vocal') return `
         <h3>PARAMÈTRES VOCAUX</h3>
@@ -6281,6 +6277,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // OLLAMA — Chargement modèles locaux
+    // ==========================================
+    loadLocalModels();
+
+    // ==========================================
     // METRICS SIDEBAR INITIALIZATION
     // ==========================================
     initMetricsSidebar();
@@ -6568,6 +6569,172 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Error restoring vocal effects:', e);
     }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// OLLAMA — Modèles locaux dynamiques
+// ═══════════════════════════════════════════════════════════════
+
+async function loadLocalModels() {
+    const group = document.getElementById('ollama-optgroup');
+    if (!group) return;
+    try {
+        const resp = await fetch('/api/models/local');
+        const data = await resp.json();
+        // Vider le groupe
+        group.innerHTML = '';
+        if (!data.ollama || data.models.length === 0) {
+            const opt = document.createElement('option');
+            opt.disabled = true;
+            opt.textContent = data.ollama ? '(aucun modèle installé)' : '⚠ Ollama non démarré';
+            group.appendChild(opt);
+            return;
+        }
+        // Mettre à jour le label avec le RAM
+        group.label = `── 🖥️ Ollama Local (${data.ram_gb} Go RAM)`;
+        for (const m of data.models) {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            const sizeStr = m.size_gb ? ` · ${m.size_gb} Go` : '';
+            const compatIcon = m.compat.level === 'error' ? ' ⚠️' : m.compat.level === 'warning' ? ' ⚡' : '';
+            opt.textContent = `${m.name}${sizeStr}${compatIcon}`;
+            opt.dataset.compat = JSON.stringify(m.compat);
+            group.appendChild(opt);
+        }
+        // Restaurer la sélection par défaut si elle existe toujours
+        const sel = document.getElementById('model-select');
+        if (sel && settings.chat?.defaultModel) {
+            const exists = [...sel.options].some(o => o.value === settings.chat.defaultModel);
+            if (exists) sel.value = settings.chat.defaultModel;
+        }
+    } catch(e) {
+        console.warn('[JARVIS] loadLocalModels error:', e);
+        group.innerHTML = '<option disabled>⚠ Erreur chargement</option>';
+    }
+}
+
+// Affiche un avertissement de compatibilité quand on sélectionne un modèle local
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('model-select');
+    if (!sel) return;
+    sel.addEventListener('change', () => {
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.dataset.compat) return;
+        try {
+            const compat = JSON.parse(opt.dataset.compat);
+            if (compat.level === 'error' || compat.level === 'warning') {
+                showToast(compat.message, compat.level === 'error' ? 'error' : 'warn');
+            }
+        } catch(e) {}
+    });
+});
+
+// ── Pull d'un modèle Ollama ───────────────────────────────────
+
+async function checkModelCompat(modelName) {
+    if (!modelName) return null;
+    try {
+        const resp = await fetch(`/api/models/check?model=${encodeURIComponent(modelName)}`);
+        return await resp.json();
+    } catch(e) { return null; }
+}
+
+async function pullOllamaModel(modelName, progressBarId, statusId) {
+    const bar = document.getElementById(progressBarId);
+    const status = document.getElementById(statusId);
+    if (!modelName) { if(status) status.textContent = '⚠ Nom de modèle requis'; return; }
+
+    // Vérifier compatibilité RAM avant
+    const compat = await checkModelCompat(modelName);
+    if (compat && !compat.ok) {
+        if (status) status.innerHTML = `<span style="color:var(--red)">${compat.message}</span>`;
+        if (!confirm(`${compat.message}\n\nContinuer quand même ?`)) return;
+    } else if (compat && compat.level === 'warning') {
+        if (status) status.innerHTML = `<span style="color:var(--amber)">${compat.message}</span>`;
+    }
+
+    if (status) status.textContent = '⬇ Téléchargement en cours...';
+    if (bar) { bar.style.display = 'block'; bar.value = 0; }
+
+    try {
+        const resp = await fetch('/api/models/pull', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model: modelName}),
+        });
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, {stream: true});
+            const lines = buf.split('\n');
+            buf = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                    const ev = JSON.parse(line.slice(6));
+                    if (ev.status === 'error') {
+                        if (status) status.innerHTML = `<span style="color:var(--red)">⚠ ${ev.message}</span>`;
+                        if (bar) bar.style.display = 'none';
+                        return;
+                    }
+                    if (ev.pct > 0 && bar) bar.value = ev.pct;
+                    if (status) status.textContent = `${ev.status}${ev.pct > 0 ? ` — ${ev.pct}%` : ''}`;
+                    if (ev.status === 'success') {
+                        if (status) status.innerHTML = '<span style="color:var(--green)">✓ Modèle installé !</span>';
+                        if (bar) bar.style.display = 'none';
+                        await loadLocalModels();
+                        return;
+                    }
+                } catch(e) {}
+            }
+        }
+    } catch(e) {
+        if (status) status.innerHTML = `<span style="color:var(--red)">⚠ ${e.message}</span>`;
+        if (bar) bar.style.display = 'none';
+    }
+}
+
+async function refreshInstalledModelsList() {
+    const el = document.getElementById('installed-models-list');
+    if (!el) return;
+    el.innerHTML = '<div class="s-desc">⏳ Chargement...</div>';
+    try {
+        const resp = await fetch('/api/models/local');
+        const d = await resp.json();
+        if (!d.ollama) { el.innerHTML = '<div class="s-desc">⚠ Ollama non démarré</div>'; return; }
+        if (!d.models.length) { el.innerHTML = '<div class="s-desc">(aucun modèle installé)</div>'; return; }
+        el.innerHTML = d.models.map(m => {
+            const sizeStr = m.size_gb ? ` · ${m.size_gb} Go` : '';
+            const compatIcon = m.compat.level === 'error' ? ' ⚠️' : m.compat.level === 'warning' ? ' ⚡' : ' ✓';
+            const compatColor = m.compat.level === 'error' ? 'var(--red)' : m.compat.level === 'warning' ? 'var(--amber)' : 'var(--green)';
+            return `<div class="setting-row" style="padding:4px 0;border-bottom:1px solid var(--border-dim);" title="${m.compat.message}">
+                <span style="font-size:0.78rem;">${m.name}${sizeStr}<span style="color:${compatColor}">${compatIcon}</span></span>
+                <button class="menu-btn danger" style="padding:2px 8px;font-size:0.7rem;" onclick="deleteLocalModel('${m.name}')">✕</button>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        el.innerHTML = `<div class="s-desc" style="color:var(--red)">Erreur: ${e.message}</div>`;
+    }
+}
+
+async function deleteLocalModel(modelName) {
+    if (!confirm(`Supprimer le modèle "${modelName}" ? Cette action est irréversible.`)) return;
+    try {
+        const resp = await fetch(`/api/models/${encodeURIComponent(modelName)}`, {method: 'DELETE'});
+        const data = await resp.json();
+        if (data.status === 'deleted') {
+            showToast(`Modèle ${modelName} supprimé`, 'ok');
+            await loadLocalModels();
+            if (typeof renderSettings === 'function') renderSettings();
+        } else {
+            showToast(`Erreur: ${data.message}`, 'error');
+        }
+    } catch(e) {
+        showToast(`Erreur: ${e.message}`, 'error');
+    }
+}
 </script>
 </body>
 </html>

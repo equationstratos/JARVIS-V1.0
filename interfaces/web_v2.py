@@ -858,6 +858,162 @@ async def upload_image(request: Request):
 
 
 # ═══════════════════════════════════════════════════════════════
+# OLLAMA — Modèles locaux + téléchargement
+# ═══════════════════════════════════════════════════════════════
+
+def _ollama_base() -> str:
+    return os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+
+
+# RAM totale en Go (pour vérification compatibilité)
+def _total_ram_gb() -> float:
+    try:
+        import psutil
+        return psutil.virtual_memory().total / (1024 ** 3)
+    except Exception:
+        return 0.0
+
+
+# Compatibilité estimée par taille de modèle
+_MODEL_SIZE_HINTS: list[tuple[int, str, str]] = [
+    # (seuil_Go_min, tag_taille, niveau)
+    (70, "70b", "warning"),   # 70B → ≥48 Go RAM
+    (34, "34b", "warning"),
+    (30, "30b", "warning"),
+    (24, "24b", "caution"),
+    (13, "13b", "caution"),
+    (8,  "8b",  "ok"),
+    (7,  "7b",  "ok"),
+    (3,  "3b",  "ok"),
+    (1,  "1b",  "ok"),
+]
+
+# Seuils RAM recommandés par paramètres (quantisé Q4)
+_RAM_REQUIRED: dict[str, float] = {
+    "70b": 48.0, "34b": 24.0, "30b": 20.0, "24b": 16.0,
+    "13b": 10.0, "8b": 6.0, "7b": 5.0, "3b": 3.0, "1b": 1.5,
+}
+
+
+def _model_compat(model_name: str, ram_gb: float) -> dict:
+    """Retourne {ok: bool, level: str, message: str} pour un nom de modèle Ollama."""
+    name_lower = model_name.lower()
+    needed = None
+    size_tag = None
+    for _, tag, _ in _MODEL_SIZE_HINTS:
+        if tag in name_lower:
+            needed = _RAM_REQUIRED.get(tag)
+            size_tag = tag
+            break
+    if needed is None:
+        return {"ok": True, "level": "unknown", "message": "Taille inconnue — vérifiez la compatibilité manuellement."}
+    if ram_gb == 0:
+        return {"ok": True, "level": "unknown", "message": f"RAM non détectable. Ce modèle ({size_tag}) nécessite ~{needed:.0f} Go."}
+    if ram_gb < needed:
+        return {
+            "ok": False, "level": "error",
+            "message": f"⚠️ RAM insuffisante : ce modèle ({size_tag}) nécessite ~{needed:.0f} Go, vous avez {ram_gb:.1f} Go. Il ne pourra pas tourner correctement.",
+        }
+    if ram_gb < needed * 1.3:
+        return {
+            "ok": True, "level": "warning",
+            "message": f"⚡ RAM limite : ce modèle ({size_tag}) nécessite ~{needed:.0f} Go, vous avez {ram_gb:.1f} Go. Performances dégradées possibles.",
+        }
+    return {"ok": True, "level": "ok", "message": f"✓ RAM suffisante ({ram_gb:.1f} Go) pour ce modèle ({size_tag}, ~{needed:.0f} Go requis)."}
+
+
+@app.get("/api/models/local")
+async def get_local_models(request: Request):
+    """Liste les modèles Ollama réellement installés."""
+    base = _ollama_base()
+    client: httpx.AsyncClient = request.app.state.http_client
+    try:
+        resp = await client.get(f"{base}/api/tags", timeout=5)
+        if resp.status_code != 200:
+            return JSONResponse({"models": [], "ollama": False, "error": f"Ollama HTTP {resp.status_code}"})
+        data = resp.json()
+        models = []
+        ram_gb = _total_ram_gb()
+        for m in data.get("models", []):
+            name = m.get("name", "")
+            size_bytes = m.get("size", 0)
+            size_gb = round(size_bytes / (1024 ** 3), 1) if size_bytes else None
+            compat = _model_compat(name, ram_gb)
+            models.append({
+                "id": f"ollama/{name}",
+                "name": name,
+                "size_gb": size_gb,
+                "modified_at": m.get("modified_at", ""),
+                "compat": compat,
+            })
+        return JSONResponse({"models": models, "ollama": True, "ram_gb": round(ram_gb, 1)})
+    except Exception as e:
+        return JSONResponse({"models": [], "ollama": False, "error": str(e)})
+
+
+@app.get("/api/models/check")
+async def check_model_compat(model: str):
+    """Vérifie la compatibilité RAM d'un modèle avant téléchargement."""
+    ram_gb = _total_ram_gb()
+    compat = _model_compat(model, ram_gb)
+    return JSONResponse({"model": model, "ram_gb": round(ram_gb, 1), **compat})
+
+
+@app.post("/api/models/pull")
+async def pull_model(request: Request):
+    """Télécharge un modèle Ollama — stream la progression via SSE."""
+    body = await request.json()
+    model = (body.get("model") or "").strip()
+    if not model:
+        raise HTTPException(400, "model requis")
+
+    base = _ollama_base()
+
+    async def _stream():
+        try:
+            async with httpx.AsyncClient(timeout=None) as client:
+                async with client.stream(
+                    "POST", f"{base}/api/pull",
+                    json={"name": model, "stream": True},
+                ) as resp:
+                    if resp.status_code != 200:
+                        yield f"data: {json.dumps({'status': 'error', 'message': f'Ollama HTTP {resp.status_code}'})}\n\n"
+                        return
+                    async for line in resp.aiter_lines():
+                        if not line:
+                            continue
+                        try:
+                            chunk = json.loads(line)
+                            status = chunk.get("status", "")
+                            total = chunk.get("total", 0)
+                            completed = chunk.get("completed", 0)
+                            pct = round(completed / total * 100) if total > 0 else 0
+                            yield f"data: {json.dumps({'status': status, 'total': total, 'completed': completed, 'pct': pct})}\n\n"
+                            if status == "success":
+                                break
+                        except Exception:
+                            pass
+        except Exception as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(_stream(), media_type="text/event-stream")
+
+
+@app.delete("/api/models/{model_name:path}")
+async def delete_model(model_name: str, request: Request):
+    """Supprime un modèle Ollama."""
+    base = _ollama_base()
+    client: httpx.AsyncClient = request.app.state.http_client
+    try:
+        resp = await client.request("DELETE", f"{base}/api/delete", json={"name": model_name})
+        if resp.status_code in (200, 204):
+            return JSONResponse({"status": "deleted", "model": model_name})
+        return JSONResponse({"status": "error", "message": f"Ollama HTTP {resp.status_code}"}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+# ═══════════════════════════════════════════════════════════════
 # BENCHMARKS (existants)
 # ═══════════════════════════════════════════════════════════════
 
