@@ -277,18 +277,17 @@ setup_venv() {
 
     # shellcheck source=/dev/null
     source venv/bin/activate
-    pip install --upgrade pip --quiet
+    pip install --upgrade pip --quiet --no-cache-dir
     success "Environnement virtuel activé"
 }
 
 # ── Dépendances Python ────────────────────────────────────────
 install_python_deps() {
     info "Installation des dépendances Python (peut prendre quelques minutes)..."
-    pip install -r requirements.txt --quiet
-    # chromadb est utilisé par web_v2.py mais pas encore dans requirements.txt
-    pip install chromadb --quiet 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
-    # mistralai est requis pour le serveur TTS Voxtral
-    pip install mistralai --quiet 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
+    # --no-cache-dir évite les erreurs de quota/espace sur ~/.cache/pip
+    pip install -r requirements.txt --quiet --no-cache-dir
+    pip install chromadb --quiet --no-cache-dir 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
+    pip install mistralai --quiet --no-cache-dir 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
     success "Dépendances Python installées"
 }
 
