@@ -268,8 +268,9 @@ setup_venv() {
 
     # shellcheck source=/dev/null
     source venv/bin/activate
-    # Forcer TMPDIR=/tmp pour éviter EDQUOT si quota utilisateur actif sur $HOME
-    export TMPDIR=/tmp
+    # /tmp est souvent un tmpfs limité (~RAM/2) sur Ubuntu — utiliser le disque réel
+    mkdir -p "${REPO_DIR}/.pip-tmp"
+    export TMPDIR="${REPO_DIR}/.pip-tmp"
     export PIP_NO_CACHE_DIR=1
     pip install --upgrade pip --quiet --no-cache-dir
     success "Environnement virtuel activé"
@@ -287,12 +288,15 @@ install_python_deps() {
         warn "Libérez des inodes : sudo find /tmp -maxdepth 1 -user \$(whoami) -delete"
     fi
 
-    # TMPDIR=/tmp + PIP_NO_CACHE_DIR pour éviter EDQUOT sur $HOME
-    export TMPDIR=/tmp
+    # TMPDIR sur le disque réel (évite le débordement du tmpfs /tmp ~RAM/2 sur Ubuntu)
+    mkdir -p "${REPO_DIR}/.pip-tmp"
+    export TMPDIR="${REPO_DIR}/.pip-tmp"
     export PIP_NO_CACHE_DIR=1
     pip install -r requirements.txt --quiet --no-cache-dir
     pip install chromadb --quiet --no-cache-dir 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
     pip install mistralai --quiet --no-cache-dir 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
+    # Nettoyer le dossier tmp pip après installation
+    rm -rf "${REPO_DIR}/.pip-tmp"
     success "Dépendances Python installées"
 }
 
