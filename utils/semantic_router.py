@@ -9,11 +9,20 @@ import asyncio
 from functools import partial
 import numpy as np
 
-try:
-    from sentence_transformers import SentenceTransformer
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+# Import différé — sentence_transformers tire PyTorch (~30s sur machines lentes)
+# L'import réel se fait à la première utilisation dans __init__
+TRANSFORMERS_AVAILABLE: Optional[bool] = None  # None = pas encore vérifié
+
+
+def _check_transformers() -> bool:
+    global TRANSFORMERS_AVAILABLE
+    if TRANSFORMERS_AVAILABLE is None:
+        try:
+            import sentence_transformers  # noqa: F401
+            TRANSFORMERS_AVAILABLE = True
+        except ImportError:
+            TRANSFORMERS_AVAILABLE = False
+    return bool(TRANSFORMERS_AVAILABLE)
 
 
 class SemanticRouter:
@@ -26,8 +35,9 @@ class SemanticRouter:
         self.agent_descriptions: Dict[str, str] = {}
         self.initialized = False
 
-        if TRANSFORMERS_AVAILABLE:
+        if _check_transformers():
             try:
+                from sentence_transformers import SentenceTransformer
                 self.model = SentenceTransformer(model_name)
                 self.initialized = True
             except Exception as e:

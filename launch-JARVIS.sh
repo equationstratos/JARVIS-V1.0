@@ -28,7 +28,7 @@ echo -e "${BOLD}${CYAN}"
 echo "  JARVIS-V1.0 — Démarrage des services"
 echo -e "${NC}"
 
-# ── Vérification venv ─────────────────────────────────────────
+# ── Vérification venv ───────────────────────────────────────────
 if [[ ! -f "$SCRIPT_DIR/venv/bin/activate" ]]; then
     error "Environnement virtuel introuvable. Lancez d'abord l'installateur :"
     error "  bash install-JARVIS-V1.0.sh"
@@ -38,7 +38,7 @@ fi
 source "$SCRIPT_DIR/venv/bin/activate"
 success "Environnement virtuel: $(which python)"
 
-# ── Arrêt des anciens processus ───────────────────────────────
+# ── Arrêt des anciens processus ────────────────────────────────
 info "Nettoyage des processus existants..."
 pkill -f "tts_server4.py"    2>/dev/null && echo "  Arrêt ancien Kokoro TTS" || true
 pkill -f "voxtral_server.py" 2>/dev/null && echo "  Arrêt ancien Voxtral TTS" || true
@@ -46,7 +46,7 @@ pkill -f "main.py --web"     2>/dev/null && echo "  Arrêt ancien backend" || tr
 pkill -f "webmobile.py"      2>/dev/null && echo "  Arrêt ancien proxy mobile" || true
 sleep 0.5
 
-# ── Logs ──────────────────────────────────────────────────────
+# ── Logs ─────────────────────────────────────────────────────────
 LOG_DIR="$SCRIPT_DIR/Logs"
 mkdir -p "$LOG_DIR"
 
@@ -55,9 +55,9 @@ VOXTRAL_PID=""
 BACKEND_PID=""
 MOBILE_PID=""
 
-# ── Attente port ouvert ───────────────────────────────────────
+# ── Attente port ouvert ─────────────────────────────────────────
 wait_for_port() {
-    local port="$1" name="$2" max_wait=30
+    local port="$1" name="$2" max_wait="${3:-30}"
     local i=0
     while ! (echo > /dev/tcp/127.0.0.1/"$port") 2>/dev/null; do
         sleep 1
@@ -67,7 +67,7 @@ wait_for_port() {
     return 0
 }
 
-# ── 1. TTS Kokoro (optionnel) ─────────────────────────────────
+# ── 1. TTS Kokoro (optionnel) ───────────────────────────────────
 TTS_SCRIPT=""
 for candidate in \
     "$SCRIPT_DIR/../jarvis-voice/tts_server4.py" \
@@ -120,19 +120,20 @@ else
     warn "Voxtral TTS non trouvé ($VOXTRAL_SCRIPT)"
 fi
 
-# ── 3. Backend :8501 ──────────────────────────────────────────
+# ── 3. Backend :8501 ──────────────────────────────────────────────
 info "Démarrage du backend JARVIS..."
+info "(Première fois : jusqu'à 2 min pour charger PyTorch)"
 python "$SCRIPT_DIR/main.py" --web >"$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 
-if wait_for_port 8501 "Backend"; then
+if wait_for_port 8501 "Backend" 120; then
     success "Backend prêt sur :8501 (PID $BACKEND_PID)"
 else
     error "Le backend n'a pas démarré. Consultez: $LOG_DIR/backend.log"
     cat "$LOG_DIR/backend.log" | tail -20
 fi
 
-# ── 4. Mobile proxy :3001 ─────────────────────────────────────
+# ── 4. Mobile proxy :3001 ──────────────────────────────────────
 info "Démarrage du proxy mobile..."
 python "$SCRIPT_DIR/webmobile.py" >"$LOG_DIR/mobile.log" 2>&1 &
 MOBILE_PID=$!
@@ -143,7 +144,7 @@ else
     warn "Proxy mobile non disponible. Consultez: $LOG_DIR/mobile.log"
 fi
 
-# ── Statut ────────────────────────────────────────────────────
+# ── Statut ─────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════${NC}"
 echo -e "${CYAN}${BOLD}  JARVIS-V1.0 en cours d'exécution${NC}"
@@ -158,7 +159,7 @@ echo -e "  Appuyez sur ${BOLD}Ctrl+C${NC} pour tout arrêter"
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════${NC}"
 echo ""
 
-# ── Arrêt propre ──────────────────────────────────────────────
+# ── Arrêt propre ────────────────────────────────────────────────
 cleanup() {
     echo ""
     info "Arrêt de tous les services..."
