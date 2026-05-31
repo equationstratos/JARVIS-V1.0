@@ -277,7 +277,7 @@ setup_venv() {
 
     # shellcheck source=/dev/null
     source venv/bin/activate
-    # Forcer TMPDIR=/tmp pour éviter les erreurs de quota sur $HOME
+    # Forcer TMPDIR=/tmp pour éviter EDQUOT si quota utilisateur actif sur $HOME
     export TMPDIR=/tmp
     export PIP_NO_CACHE_DIR=1
     pip install --upgrade pip --quiet --no-cache-dir
@@ -288,7 +288,7 @@ setup_venv() {
 install_python_deps() {
     info "Installation des dépendances Python (peut prendre quelques minutes)..."
 
-    # Diagnostic quota/inodes avant d'installer
+    # Diagnostic inodes avant d'installer
     local inodes_pct
     inodes_pct=$(df -i "$REPO_DIR" 2>/dev/null | awk 'NR==2{gsub("%",""); print $5}' || echo 0)
     if [[ "$inodes_pct" =~ ^[0-9]+$ && $inodes_pct -ge 90 ]]; then
@@ -296,7 +296,7 @@ install_python_deps() {
         warn "Libérez des inodes : sudo find /tmp -maxdepth 1 -user \$(whoami) -delete"
     fi
 
-    # --no-cache-dir + TMPDIR=/tmp évite les erreurs de quota sur $HOME
+    # TMPDIR=/tmp + PIP_NO_CACHE_DIR pour éviter EDQUOT sur $HOME
     export TMPDIR=/tmp
     export PIP_NO_CACHE_DIR=1
     pip install -r requirements.txt --quiet --no-cache-dir
