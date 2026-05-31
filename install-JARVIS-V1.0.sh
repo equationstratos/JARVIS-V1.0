@@ -20,6 +20,32 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 die()     { error "$*"; exit 1; }
 
+# ── Spinner animé ─────────────────────────────────────────────
+SPINNER_PID=0
+spinner_start() {
+    local msg="$1"
+    (
+        local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+        local i=0
+        while true; do
+            printf "\r  ${CYAN}%s${NC}  %s          " "${frames[$i]}" "$msg"
+            i=$(( (i+1) % 10 ))
+            sleep 0.1
+        done
+    ) &
+    SPINNER_PID=$!
+}
+spinner_stop() {
+    if [[ $SPINNER_PID -gt 0 ]]; then
+        kill "$SPINNER_PID" 2>/dev/null || true
+        wait "$SPINNER_PID" 2>/dev/null || true
+        SPINNER_PID=0
+    fi
+    printf "\r%-72s\r" " "
+}
+# Arrêter le spinner proprement si le script est interrompu
+trap 'spinner_stop' EXIT INT TERM
+
 # ── Bannière ──────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}"
 cat << 'EOF'
@@ -70,7 +96,7 @@ detect_hardware() {
     if has_cmd nvidia-smi; then
         local vram_mb
         vram_mb=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
-        [[ "$vram_mb" =~ ^[0-9]+$ ]] && VRAM_GB=$(( vram_mb / 1024 ))
+        [[  "$vram_mb" =~ ^[0-9]+$ ]] && VRAM_GB=$(( vram_mb / 1024 ))
     fi
 
     # Espace disque libre dans le répertoire courant (en GB)
@@ -138,7 +164,7 @@ select_ollama_models() {
     echo -e "${BOLD}${CYAN}┌─ Profil matériel détecté ──────────────────────────────┐${NC}"
     echo -e "${BOLD}${CYAN}│${NC}  ${HW_TIER}"
     echo -e "${BOLD}${CYAN}│${NC}  Modèle principal : ${BOLD}${PRIMARY_MODEL}${NC}"
-    [[ "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && \
+    [[  "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && \
     echo -e "${BOLD}${CYAN}│${NC}  Modèle fallback  : ${BOLD}${FALLBACK_MODEL}${NC}"
     echo -e "${BOLD}${CYAN}│${NC}  Modèles en RAM   : ${MAX_LOADED_MODELS}"
     echo -e "${BOLD}${CYAN}└────────────────────────────────────────────────────────┘${NC}"
@@ -278,25 +304,56 @@ setup_venv() {
 
 # ── Dépendances Python ────────────────────────────────────────
 install_python_deps() {
-    info "Installation des dépendances Python (peut prendre quelques minutes)..."
-
     # Diagnostic inodes avant d'installer
     local inodes_pct
     inodes_pct=$(df -i "$REPO_DIR" 2>/dev/null | awk 'NR==2{gsub("%",""); print $5}' || echo 0)
     if [[ "$inodes_pct" =~ ^[0-9]+$ && $inodes_pct -ge 90 ]]; then
         warn "Inodes utilisés à ${inodes_pct}% — risque d'erreur EDQUOT !"
-        warn "Libérez des inodes : sudo find /tmp -maxdepth 1 -user \$(whoami) -delete"
     fi
 
     # TMPDIR sur le disque réel (évite le débordement du tmpfs /tmp ~RAM/2 sur Ubuntu)
     mkdir -p "${REPO_DIR}/.pip-tmp"
     export TMPDIR="${REPO_DIR}/.pip-tmp"
     export PIP_NO_CACHE_DIR=1
-    pip install -r requirements.txt --quiet --no-cache-dir
-    pip install chromadb --quiet --no-cache-dir 2>/dev/null || warn "chromadb non installé (mémoire vectorielle désactivée)"
-    pip install mistralai --quiet --no-cache-dir 2>/dev/null || warn "mistralai non installé (TTS Voxtral désactivé)"
-    # Nettoyer le dossier tmp pip après installation
+
+    local total_pkgs
+    total_pkgs=$(grep -cE '^[^#[:space:]]' requirements.txt 2>/dev/null || echo "?")
+    info "Installation des dépendances Python — ${total_pkgs} paquets (peut prendre 2-5 min)..."
+    echo ""
+
+    # ── requirements.txt ──────────────────────────────────────
+    spinner_start "requirements.txt  [${total_pkgs} paquets] ..."
+    if pip install -r requirements.txt --no-cache-dir --quiet; then
+        spinner_stop
+        success "Dépendances principales OK"
+    else
+        spinner_stop
+        die "Échec pip install requirements.txt"
+    fi
+
+    # ── chromadb (mémoire vectorielle) ─────────────────────────
+    spinner_start "chromadb  [mémoire vectorielle] ..."
+    if pip install chromadb --no-cache-dir --quiet 2>/dev/null; then
+        spinner_stop
+        success "chromadb OK"
+    else
+        spinner_stop
+        warn "chromadb non installé (mémoire vectorielle désactivée)"
+    fi
+
+    # ── mistralai (TTS Voxtral) ────────────────────────────────
+    spinner_start "mistralai  [TTS Voxtral] ..."
+    if pip install mistralai --no-cache-dir --quiet 2>/dev/null; then
+        spinner_stop
+        success "mistralai OK"
+    else
+        spinner_stop
+        warn "mistralai non installé (TTS Voxtral désactivé)"
+    fi
+
+    # Nettoyer le dossier tmp pip
     rm -rf "${REPO_DIR}/.pip-tmp"
+    echo ""
     success "Dépendances Python installées"
 }
 
@@ -607,7 +664,7 @@ print_success() {
     echo ""
     echo -e "${BOLD}Si 'pm2: command not found' après l'installation :${NC}"
     echo -e "  ${CYAN}export PATH=\"\$(npm root -g | sed 's|/node_modules||')/bin:\$PATH\"${NC}"
-    echo -e "  ${CYAN}echo 'export PATH=\"\$(npm root -g | sed '\''s|/node_modules||'\'')/bin:\$PATH\"' >> ~/.bashrc${NC}"
+    echo -e "  ${CYAN}echo 'export PATH=\"\$(npm root -g | sed '\''s|/node_modules||'\')')/bin:\$PATH\"' >> ~/.bashrc${NC}"
     echo ""
     echo -e "${BOLD}Activer le démarrage automatique au boot (PM2) :${NC}"
     echo -e "  ${CYAN}pm2 startup${NC}  ← coller la commande sudo affichée"
