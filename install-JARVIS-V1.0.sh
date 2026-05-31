@@ -96,7 +96,7 @@ detect_hardware() {
     if has_cmd nvidia-smi; then
         local vram_mb
         vram_mb=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
-        [[  "$vram_mb" =~ ^[0-9]+$ ]] && VRAM_GB=$(( vram_mb / 1024 ))
+        [[ "$vram_mb" =~ ^[0-9]+$ ]] && VRAM_GB=$(( vram_mb / 1024 ))
     fi
 
     # Espace disque libre dans le répertoire courant (en GB)
@@ -164,7 +164,7 @@ select_ollama_models() {
     echo -e "${BOLD}${CYAN}┌─ Profil matériel détecté ──────────────────────────────┐${NC}"
     echo -e "${BOLD}${CYAN}│${NC}  ${HW_TIER}"
     echo -e "${BOLD}${CYAN}│${NC}  Modèle principal : ${BOLD}${PRIMARY_MODEL}${NC}"
-    [[  "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && \
+    [[ "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && \
     echo -e "${BOLD}${CYAN}│${NC}  Modèle fallback  : ${BOLD}${FALLBACK_MODEL}${NC}"
     echo -e "${BOLD}${CYAN}│${NC}  Modèles en RAM   : ${MAX_LOADED_MODELS}"
     echo -e "${BOLD}${CYAN}└────────────────────────────────────────────────────────┘${NC}"
@@ -351,8 +351,9 @@ install_python_deps() {
         warn "mistralai non installé (TTS Voxtral désactivé)"
     fi
 
-    # Nettoyer le dossier tmp pip
+    # Nettoyer le dossier tmp pip et restaurer TMPDIR par défaut
     rm -rf "${REPO_DIR}/.pip-tmp"
+    unset TMPDIR
     echo ""
     success "Dépendances Python installées"
 }
