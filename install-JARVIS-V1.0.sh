@@ -24,24 +24,15 @@ die()     { error "$*"; exit 1; }
 echo -e "${BOLD}${CYAN}"
 cat << 'EOF'
 
-          JJJJJJJJJJJ          AAA               RRRRRRRRRRRRRRRRR   VVVVVVVV           VVVVVVVVIIIIIIIIII   SSSSSSSSSSSSSSS
-          J:::::::::J         A:::A              R::::::::::::::::R  V::::::V           V::::::VI::::::::I SS:::::::::::::::S
-          J:::::::::J        A:::::A             R::::::RRRRRR:::::R V::::::V           V::::::VI::::::::IS:::::SSSSSS::::::S
-          JJ:::::::JJ       A:::::::A            RR:::::R     R:::::RV::::::V           V::::::VII::::::IIS:::::S     SSSSSSS
-            J:::::J        A:::::::::A             R::::R     R:::::R V:::::V           V:::::V   I::::I  S:::::S
-            J:::::J       A:::::A:::::A            R::::R     R:::::R  V:::::V         V:::::V    I::::I  S:::::S
-            J:::::J      A:::::A A:::::A           R::::RRRRRR:::::R    V:::::V       V:::::V     I::::I   S::::SSSS
-            J:::::j     A:::::A   A:::::A          R:::::::::::::RR      V:::::V     V:::::V      I::::I    SS::::::SSSSS
-            J:::::J    A:::::A     A:::::A         R::::RRRRRR:::::R      V:::::V   V:::::V       I::::I      SSS::::::::SS
-JJJJJJJ     J:::::J   A:::::AAAAAAAAA:::::A        R::::R     R:::::R      V:::::V V:::::V        I::::I         SSSSSS::::S
-J:::::J     J:::::J  A:::::::::::::::::::::A       R::::R     R:::::R       V:::::V:::::V         I::::I              S:::::S
-J::::::J   J::::::J A:::::AAAAAAAAAAAAA:::::A      R::::R     R:::::R        V:::::::::V          I::::I              S:::::S
-J:::::::JJJ:::::::JA:::::A             A:::::A   RR:::::R     R:::::R         V:::::::V         II::::::IISSSSSSS     S:::::S
- JJ:::::::::::::JJA:::::A               A:::::A  R::::::R     R:::::R          V:::::V          I::::::::IS::::::SSSSSS:::::S
-   JJ:::::::::JJ A:::::A                 A:::::A R::::::R     R:::::R           V:::V           I::::::::IS:::::::::::::::SS
-     JJJJJJJJJ  AAAAAAA                   AAAAAAARRRRRRRR     RRRRRRR            VVV            IIIIIIIIII SSSSSSSSSSSSSSS
+::::::::::: :::     :::::::::  :::     ::: ::::::::::: ::::::::
+    :+:   :+: :+:   :+:    :+: :+:     :+:     :+:    :+:    :+:
+    +:+  +:+   +:+  +:+    +:+ +:+     +:+     +:+    +:+
+    +#+ +#++:++#++: +#++:++#:  +#+     +:+     +#+    +#++:++#++
+    +#+ +#+     +#+ +#+    +#+  +#+   +#+      +#+           +#+
+#+# #+# #+#     #+# #+#    #+#   #+#+#+#       #+#    #+#    #+#
+ #####  ###     ### ###    ###     ###     ########### ########
 
-                            Modular Agentic AI Ecosystem — Installer v1.0
+         Modular Agentic AI Ecosystem — Installer v1.0
 EOF
 echo -e "${NC}"
 
@@ -378,7 +369,7 @@ configure_ollama_perf() {
 pull_ollama_models() {
     # Construire la liste des modèles à télécharger (dédupliquée)
     local models_to_pull=("$PRIMARY_MODEL")
-    [[  "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && models_to_pull+=("$FALLBACK_MODEL")
+    [[ "$FALLBACK_MODEL" != "$PRIMARY_MODEL" ]] && models_to_pull+=("$FALLBACK_MODEL")
 
     # Calculer la taille approximative pour informer l'utilisateur
     local total_size="?"
