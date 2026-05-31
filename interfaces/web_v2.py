@@ -18,8 +18,14 @@ import sys
 import json
 import time
 import asyncio
-import chromadb
-from chromadb.utils import embedding_functions
+try:
+    import chromadb
+    from chromadb.utils import embedding_functions
+    CHROMADB_AVAILABLE = True
+except Exception:
+    chromadb = None  # type: ignore
+    embedding_functions = None  # type: ignore
+    CHROMADB_AVAILABLE = False
 import subprocess
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -430,19 +436,29 @@ Now generate the suggestions:"""
             status_code=500
         )
 
-# 1. Configuration de la base de données (en local sur ton VPS)
-chroma_client = chromadb.PersistentClient(path="./memoire_ia")
-# Utilise ChromaDB's default embedding function (no external downloads required)
-try:
-    sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-except Exception as e:
-    print(f"[WARNING] Failed to load SentenceTransformer: {e}")
-    print("[INFO] Using ChromaDB default embedding function")
-    sentence_transformer_ef = embedding_functions.DefaultEmbeddingFunction()
-collection = chroma_client.get_or_create_collection(name="experience_agent", embedding_function=sentence_transformer_ef)
+# 1. Configuration de la base de données vectorielle (optionnelle)
+chroma_client = None
+collection = None
+if CHROMADB_AVAILABLE and os.getenv("ENABLE_MEMORY_AGENT", "true").lower() == "true":
+    try:
+        chroma_client = chromadb.PersistentClient(path="./memoire_ia")
+        try:
+            sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        except Exception:
+            sentence_transformer_ef = embedding_functions.DefaultEmbeddingFunction()
+        collection = chroma_client.get_or_create_collection(name="experience_agent", embedding_function=sentence_transformer_ef)
+    except Exception as e:
+        print(f"[WARN] ChromaDB non disponible (mémoire désactivée): {e}")
+        chroma_client = None
+        collection = None
+else:
+    if not CHROMADB_AVAILABLE:
+        print("[INFO] ChromaDB non installé — mémoire vectorielle désactivée")
 
 def se_souvenir(requete_actuelle):
     """Recherche dans le passé les 2 souvenirs les plus proches."""
+    if collection is None:
+        return "Aucun souvenir similaire."
     resultats = collection.query(
         query_texts=[requete_actuelle],
         n_results=2
@@ -453,6 +469,8 @@ def se_souvenir(requete_actuelle):
 
 def enregistrer_experience(tache, resultat, lecon):
     """Sauvegarde le succès ou l'échec dans la mémoire."""
+    if collection is None:
+        return
     identifiant = f"exp_{collection.count() + 1}"
     contenu = f"Tâche: {tache} | Résultat: {resultat} | Leçon: {lecon}"
     collection.add(
