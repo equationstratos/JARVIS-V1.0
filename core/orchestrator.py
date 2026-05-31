@@ -216,3 +216,25 @@ class Orchestrator:
             await self.cache_manager.cache_routing_decision(user_query, target, ttl=7200)
 
         return self.agents[target]
+
+    async def route(
+        self, user_query: str, history: List[Dict[str, str]]
+    ) -> str:
+        """API non-streaming (compatibilité)."""
+        agent = await self._resolve_agent(user_query)
+        return await agent.execute(
+            user_query, history, self.blackboard,
+            model_override=self.override_model,
+        )
+
+    async def route_stream(
+        self, user_query: str, history: List[Dict[str, str]]
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """API streaming. Yield des dicts {type, data}."""
+        agent = await self._resolve_agent(user_query)
+        yield {"type": "agent", "data": agent.name}
+        async for chunk in agent.execute_stream(
+            user_query, history, self.blackboard,
+            model_override=self.override_model,
+        ):
+            yield chunk
