@@ -351,8 +351,9 @@ install_python_deps() {
         warn "mistralai non installé (TTS Voxtral désactivé)"
     fi
 
-    # Nettoyer le dossier tmp pip
+    # Nettoyer le dossier tmp pip et restaurer TMPDIR par défaut
     rm -rf "${REPO_DIR}/.pip-tmp"
+    unset TMPDIR
     echo ""
     success "Dépendances Python installées"
 }
