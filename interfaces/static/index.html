@@ -3332,10 +3332,40 @@ function getTTSServiceURL() {
 }
 window.getTTSServiceURL = getTTSServiceURL;
 
-function updateTTSVoiceSelector() {
+async function updateTTSVoiceSelector() {
     const select = document.getElementById('tts-voice-select');
     if (!select) return;
     const engine = settings.vocal.ttsEngine || 'kokoro';
+
+    if (engine === 'voxtral') {
+        select.innerHTML = '<option disabled>⏳ Chargement voix Mistral...</option>';
+        try {
+            const resp = await fetch('http://localhost:8001/voices');
+            const data = await resp.json();
+            const voices = data.voices || [];
+            const saved = settings.vocal.ttsVoice;
+            select.innerHTML = '';
+            voices.forEach(function(v) {
+                const opt = document.createElement('option');
+                opt.value = v.slug;
+                const lang = v.languages && v.languages[0] ? ' [' + v.languages[0] + ']' : '';
+                opt.textContent = v.name + lang;
+                if (v.slug === saved) opt.selected = true;
+                select.appendChild(opt);
+            });
+            if (voices.length > 0 && !voices.find(v => v.slug === saved)) {
+                const first = voices[0].slug;
+                select.value = first;
+                updateSetting('vocal.ttsVoice', first);
+            }
+        } catch(e) {
+            select.innerHTML = '<option value="en_paul_neutral">Paul - Neutral (défaut)</option>';
+            updateSetting('vocal.ttsVoice', 'en_paul_neutral');
+        }
+        return;
+    }
+
+    // Kokoro
     const voices = VOICES_BY_ENGINE[engine] || [];
     const saved = settings.vocal.ttsVoice;
     select.innerHTML = '';
