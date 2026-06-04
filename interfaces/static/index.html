@@ -3343,8 +3343,10 @@ async function updateTTSVoiceSelector() {
             const resp = await fetch('http://localhost:8001/voices');
             const data = await resp.json();
             const voices = data.voices || [];
-            // Mettre les voix françaises en premier
+            // fr_marie_curious en premier, puis autres voix françaises, puis reste
             voices.sort((a, b) => {
+                if (a.slug === 'fr_marie_curious') return -1;
+                if (b.slug === 'fr_marie_curious') return 1;
                 const aFr = a.languages && a.languages.some(l => l.startsWith('fr'));
                 const bFr = b.languages && b.languages.some(l => l.startsWith('fr'));
                 return (bFr ? 1 : 0) - (aFr ? 1 : 0);
