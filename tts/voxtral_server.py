@@ -29,11 +29,11 @@ load_dotenv(os.path.join(_ROOT, ".env"))
 PORT  = int(os.getenv("TTS_VOXTRAL_PORT", "8001"))
 HOST  = os.getenv("TTS_VOXTRAL_HOST", "0.0.0.0")
 # Modèles Mistral TTS connus : voxtral-mini-2507, mistral-tts-latest
-VOXTRAL_MODEL = os.getenv("VOXTRAL_MODEL", "voxtral-mini-2507")
+VOXTRAL_MODEL = os.getenv("VOXTRAL_MODEL", "voxtral-mini-tts-latest")
 MISTRAL_TTS_URL = "https://api.mistral.ai/v1/audio/speech"
 
-VOICE_MAP = {"fr_female": "fr-FR-female", "fr_male": "fr-FR-male"}
-DEFAULT_VOICE = "fr-FR-female"
+VOICE_MAP = {"fr_female": "fr_female", "fr_male": "fr_male"}
+DEFAULT_VOICE = "fr_female"
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("voxtral_server")
