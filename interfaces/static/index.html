@@ -4314,7 +4314,7 @@ function renderSettingsPane(tab) {
         <div class="setting-card">
             <label class="s-label">VOIX</label>
             <select class="cyber-select" id="tts-voice-select" onchange="updateSetting('vocal.ttsVoice', this.value)">
-                <!-- Peuplé par updateTTSVoiceSelector() -->
+                <option value="fr_marie_curious" ${settings.vocal.ttsVoice==='fr_marie_curious'?'selected':''}>🇫🇷 Marie - Curious (défaut)</option>
             </select>
         </div>
         <div class="setting-card">
