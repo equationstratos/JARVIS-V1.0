@@ -2279,7 +2279,14 @@ function loadSettings() {
     try {
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-        return deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), JSON.parse(raw));
+        const s = deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), JSON.parse(raw));
+        // Migration : corriger les anciennes voix obsolètes vers les nouveaux défauts
+        if (['fr_female','fr_male'].includes(s.vocal.ttsVoice) ||
+            (s.vocal.ttsEngine === 'kokoro' && s.vocal.ttsVoice === 'ff_siwis')) {
+            s.vocal.ttsVoice = 'fr_marie_curious';
+            s.vocal.ttsEngine = 'voxtral';
+        }
+        return s;
     } catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
 }
 function saveSettings() {
