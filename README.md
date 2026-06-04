@@ -14,11 +14,7 @@
 <img width="1361" height="689" alt="Capture d’écran du 2026-05-11 03-49-42" src="https://github.com/user-attachments/assets/4f03d623-f97f-4ad3-a20a-a54b4f3e9843" />
 <img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-51-04" src="https://github.com/user-attachments/assets/03416bbd-4dee-42e3-8055-37b119643d03" />
 <img width="1366" height="768" alt="Capture d’écran du 2026-05-23 13-50-35" src="https://github.com/user-attachments/assets/139ac4ef-33a9-42bd-b5e6-78daa0532545" />
-<img width="1080" height="2400" alt="Screenshot_20260531-231518 JARVIS Chat" src="https://github.com/user-attachments/assets/15bd0b07-2f94-4e9a-831c-142ec5ddd2ed" />
-<img width="387" height="765" alt="Capture d’écran du 2026-06-04 14-08-49" src="https://github.com/user-attachments/assets/f0247781-b25e-47e7-a2b1-9ec919121fd8" />
-<img width="397" height="732" alt="Capture d’écran du 2026-06-04 14-06-43" src="https://github.com/user-attachments/assets/214c16b3-0e4f-44fb-b900-d08db7e07a02" />
-<img width="397" height="732" alt="Capture d’écran du 2026-06-04 14-05-25" src="https://github.com/user-attachments/assets/60ad712c-80ea-4f6e-ae0a-45266685219e" />
-<img width="377" height="732" alt="Capture d’écran du 2026-06-04 14-01-59" src="https://github.com/user-attachments/assets/87be9a6d-49a7-4156-bd92-bf0d6142e73d" />
+<img width="1235" height="771" alt="Capture d’écran du 2026-06-04 14-11-04" src="https://github.com/user-attachments/assets/e7a6a946-4353-49b9-b481-cd4ce4c7344e" />
 
 
 
