@@ -2280,11 +2280,12 @@ function loadSettings() {
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
         const s = deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), JSON.parse(raw));
-        // Migration : corriger les anciennes voix obsolètes vers les nouveaux défauts
-        if (['fr_female','fr_male'].includes(s.vocal.ttsVoice) ||
-            (s.vocal.ttsEngine === 'kokoro' && s.vocal.ttsVoice === 'ff_siwis')) {
+        // Migration : forcer voxtral + fr_marie_curious si voix/moteur obsolète
+        const _oldVoices = ['fr_female','fr_male','ff_siwis','af_heart','af_bella','am_michael','am_adam'];
+        if (_oldVoices.includes(s.vocal.ttsVoice) || s.vocal.ttsEngine !== 'voxtral') {
             s.vocal.ttsVoice = 'fr_marie_curious';
             s.vocal.ttsEngine = 'voxtral';
+            try { const _t = JSON.parse(JSON.stringify(s)); delete _t.vocal.voicesByEngine; localStorage.setItem(SETTINGS_KEY, JSON.stringify(_t)); } catch {}
         }
         return s;
     } catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
