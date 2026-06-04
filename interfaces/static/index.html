@@ -2026,7 +2026,7 @@ const ACHIEVEMENTS_KEY = 'jarvis.achievements.v1';
 
 const DEFAULT_SETTINGS = {
     chat: { defaultModel:'gemini/gemini-2.0-flash', streaming:true, historyLimit:15, responseStyle:'balanced', forcedLanguage:'auto', suggestionMode:false },
-    vocal: { ttsEnabled:false, ttsEngine:'kokoro', ttsVoice:'ff_siwis', ttsSpeed:1.0, continuousListen:false, silenceDelay:1.5, bargeIn:true, pushToTalkSpace:true, voicesByEngine:{kokoro:['ff_siwis'], voxtral:['fr_female','fr_male']} },
+    vocal: { ttsEnabled:false, ttsEngine:'kokoro', ttsVoice:'ff_siwis', ttsSpeed:1.0, continuousListen:false, silenceDelay:1.5, bargeIn:true, pushToTalkSpace:true, voicesByEngine:{kokoro:['ff_siwis','af_heart','af_bella','am_michael','am_adam'], voxtral:['fr_female','fr_male']} },
     audio: { vocalEffects: { robot:false, autotune:false, echo:false } },
     visual: { accentColor:'cyan', vizStyle:'sphere', vizEnabled:false, density:'normal', smoothMode:true, bgColor:'black', uiColor:'gunmetal', bgAnimationType:'nebula', agentVisualizerStyle:'arcs', currentPersonality:'jarvis' },
     advanced: { pixelRatio:1.5, timeoutSeconds:60, renderThrottleMs:50 },
@@ -3352,11 +3352,20 @@ function updateTTSVoiceSelector() {
         updateSetting('vocal.ttsVoice', voices[0]);
     }
 
+    const VOICE_LABELS = {
+        'fr_female': '👩 Femme française (Voxtral)',
+        'fr_male':   '👨 Homme français (Voxtral)',
+        'ff_siwis':  '👩 Siwis — FR féminine (Kokoro)',
+        'af_heart':  '💙 Heart — EN féminine (Kokoro)',
+        'af_bella':  '🌸 Bella — EN féminine (Kokoro)',
+        'am_michael':'🎙 Michael — EN masculin (Kokoro)',
+        'am_adam':   '🔵 Adam — EN masculin (Kokoro)',
+    };
     select.innerHTML = '';
     voices.forEach(voice => {
         const option = document.createElement('option');
         option.value = voice;
-        option.textContent = voice;
+        option.textContent = VOICE_LABELS[voice] || voice;
         if (voice === settings.vocal.ttsVoice) option.selected = true;
         select.appendChild(option);
     });
@@ -3452,13 +3461,25 @@ async function ttsRunGenerator() {
                 body: JSON.stringify({text, voice:settings.vocal.ttsVoice, speed:settings.vocal.ttsSpeed}),
                 signal: state.ttsAbort.signal,
             });
-            if (!resp.ok) continue;
+            if (!resp.ok) {
+                const engine = settings.vocal.ttsEngine || 'kokoro';
+                const port = engine === 'voxtral' ? 8001 : 8000;
+                showToast(`⚠ Serveur TTS ${engine} hors ligne (port ${port}). Démarrez-le ou changez de moteur.`);
+                state.ttsEnabled = false; settings.vocal.ttsEnabled = false; saveSettings();
+                if (dom.ttsToggle) dom.ttsToggle.checked = false;
+                break;
+            }
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);
             state.ttsAudioQueue.push({url, text});
             ttsRunPlayer();
         } catch (e) {
-            if (e.name !== 'AbortError') console.warn('TTS fetch:', e);
+            if (e.name !== 'AbortError') {
+                const engine = settings.vocal.ttsEngine || 'kokoro';
+                showToast(`⚠ TTS impossible : serveur ${engine} inaccessible. Vérifiez qu'il est démarré.`);
+                state.ttsEnabled = false; settings.vocal.ttsEnabled = false; saveSettings();
+                if (dom.ttsToggle) dom.ttsToggle.checked = false;
+            }
             break;
         }
     }
@@ -4137,7 +4158,7 @@ function renderSettings() {
     dom.menuBody.innerHTML = html;
     if (currentSettingsTab === 'agents') loadAgentsList();
     if (currentSettingsTab === 'chat') { refreshInstalledModelsList(); loadModelCatalog(); }
-    if (currentSettingsTab === 'vocal') { updateTTSVoiceSelector(); refreshTTSStatus(); }
+    if (currentSettingsTab === 'vocal') { setTimeout(() => { updateTTSVoiceSelector(); refreshTTSStatus(); }, 0); }
 }
 function switchSettingsTab(tabId) {
     currentSettingsTab = tabId;
@@ -4145,7 +4166,7 @@ function switchSettingsTab(tabId) {
     document.getElementById('settings-pane').innerHTML = renderSettingsPane(tabId);
     if (tabId === 'agents') loadAgentsList();
     if (tabId === 'chat') { refreshInstalledModelsList(); loadModelCatalog(); }
-    if (tabId === 'vocal') { updateTTSVoiceSelector(); refreshTTSStatus(); }
+    if (tabId === 'vocal') { setTimeout(() => { updateTTSVoiceSelector(); refreshTTSStatus(); }, 0); }
 }
 window.switchSettingsTab = switchSettingsTab;
 
@@ -4211,7 +4232,13 @@ function renderSettingsPane(tab) {
         <h3>PARAMÈTRES VOCAUX</h3>
         <div class="setting-card">
             <label class="s-label">SERVEURS TTS</label>
-            <div id="tts-server-status" style="font-size:0.78rem;color:var(--accent-dim);">⏳ Vérification...</div>
+            <div id="tts-server-status" style="font-size:0.78rem;color:var(--accent-dim);margin-bottom:8px;">⏳ Vérification...</div>
+            <div class="s-desc" style="margin-bottom:6px;">Pour activer la voix, démarrez le serveur correspondant :</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;font-family:monospace;">
+                <div style="margin-bottom:4px;">🔵 <b>Kokoro</b> (local, gratuit) :<br><span style="color:var(--accent);">python -m kokoro_onnx</span></div>
+                <div>🟣 <b>Voxtral</b> (Mistral API) :<br><span style="color:var(--accent);">python tts/voxtral_server.py</span><br><span style="color:var(--amber);">→ Nécessite MISTRAL_API_KEY dans .env</span></div>
+            </div>
+            <button class="menu-btn" style="margin-top:8px;font-size:0.75rem;" onclick="refreshTTSStatus()">↺ VÉRIFIER STATUT</button>
         </div>
         <div class="setting-card">
             <div class="setting-row">
