@@ -3343,18 +3343,27 @@ async function updateTTSVoiceSelector() {
             const resp = await fetch('http://localhost:8001/voices');
             const data = await resp.json();
             const voices = data.voices || [];
+            // Mettre les voix françaises en premier
+            voices.sort((a, b) => {
+                const aFr = a.languages && a.languages.some(l => l.startsWith('fr'));
+                const bFr = b.languages && b.languages.some(l => l.startsWith('fr'));
+                return (bFr ? 1 : 0) - (aFr ? 1 : 0);
+            });
             const saved = settings.vocal.ttsVoice;
             select.innerHTML = '';
             voices.forEach(function(v) {
                 const opt = document.createElement('option');
                 opt.value = v.slug;
-                const lang = v.languages && v.languages[0] ? ' [' + v.languages[0] + ']' : '';
-                opt.textContent = v.name + lang;
+                const isFr = v.languages && v.languages.some(l => l.startsWith('fr'));
+                const flag = isFr ? '🇫🇷 ' : '🇬🇧 ';
+                opt.textContent = flag + v.name;
                 if (v.slug === saved) opt.selected = true;
                 select.appendChild(opt);
             });
             if (voices.length > 0 && !voices.find(v => v.slug === saved)) {
-                const first = voices[0].slug;
+                // Préférer une voix française
+                const fr = voices.find(v => v.languages && v.languages.some(l => l.startsWith('fr')));
+                const first = (fr || voices[0]).slug;
                 select.value = first;
                 updateSetting('vocal.ttsVoice', first);
             }

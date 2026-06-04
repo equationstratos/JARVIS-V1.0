@@ -103,7 +103,7 @@ async def speech(req: SpeechRequest):
             resp = await client.post(
                 f"{MISTRAL_BASE}/audio/speech",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": VOXTRAL_MODEL, "input": text, "voice": req.voice},
+                json={"model": VOXTRAL_MODEL, "input": text, "voice_id": req.voice, "response_format": "mp3"},
             )
         if resp.status_code == 401:
             return JSONResponse({"error": "Clé API Mistral invalide"}, status_code=401)
