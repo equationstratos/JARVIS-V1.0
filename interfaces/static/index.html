@@ -3336,11 +3336,22 @@ function updateTTSVoiceSelector() {
     const select = document.getElementById('tts-voice-select');
     if (!select) return;
     const engine = settings.vocal.ttsEngine || 'kokoro';
-    const voices = VOICES_BY_ENGINE[engine] || [];
-    if (voices.length > 0 && !voices.includes(settings.vocal.ttsVoice)) {
-        updateSetting('vocal.ttsVoice', voices[0]);
+    let firstVisible = null;
+    Array.from(select.options).forEach(opt => {
+        const show = opt.dataset.engine === engine;
+        opt.style.display = show ? '' : 'none';
+        opt.disabled = !show;
+        if (show && !firstVisible) firstVisible = opt.value;
+    });
+    // Sélectionner la voix sauvegardée ou la première disponible
+    const saved = settings.vocal.ttsVoice;
+    const validOpt = Array.from(select.options).find(o => o.value === saved && o.dataset.engine === engine);
+    if (validOpt) {
+        select.value = saved;
+    } else if (firstVisible) {
+        select.value = firstVisible;
+        updateSetting('vocal.ttsVoice', firstVisible);
     }
-    select.innerHTML = renderVoiceOptions();
 }
 window.updateTTSVoiceSelector = updateTTSVoiceSelector;
 
@@ -4130,7 +4141,7 @@ function renderSettings() {
     dom.menuBody.innerHTML = html;
     if (currentSettingsTab === 'agents') loadAgentsList();
     if (currentSettingsTab === 'chat') { refreshInstalledModelsList(); loadModelCatalog(); }
-    if (currentSettingsTab === 'vocal') { setTimeout(() => { updateTTSVoiceSelector(); refreshTTSStatus(); }, 0); }
+    if (currentSettingsTab === 'vocal') { updateTTSVoiceSelector(); refreshTTSStatus(); }
 }
 function switchSettingsTab(tabId) {
     currentSettingsTab = tabId;
@@ -4256,7 +4267,13 @@ function renderSettingsPane(tab) {
         <div class="setting-card">
             <label class="s-label">VOIX</label>
             <select class="cyber-select" id="tts-voice-select" onchange="updateSetting('vocal.ttsVoice', this.value)">
-                ${renderVoiceOptions()}
+                <option value="fr_female" data-engine="voxtral">👩 Femme française (Voxtral)</option>
+                <option value="fr_male" data-engine="voxtral">👨 Homme français (Voxtral)</option>
+                <option value="ff_siwis" data-engine="kokoro">👩 Siwis — FR féminine (Kokoro)</option>
+                <option value="af_heart" data-engine="kokoro">💙 Heart — EN féminine (Kokoro)</option>
+                <option value="af_bella" data-engine="kokoro">🌸 Bella — EN féminine (Kokoro)</option>
+                <option value="am_michael" data-engine="kokoro">🎙 Michael — EN masculin (Kokoro)</option>
+                <option value="am_adam" data-engine="kokoro">🔵 Adam — EN masculin (Kokoro)</option>
             </select>
         </div>
         <div class="setting-card">
