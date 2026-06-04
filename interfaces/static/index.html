@@ -3333,42 +3333,14 @@ function getTTSServiceURL() {
 window.getTTSServiceURL = getTTSServiceURL;
 
 function updateTTSVoiceSelector() {
-    const engine = settings.vocal.ttsEngine || 'kokoro';
-
-    // S'assurer que voicesByEngine est toujours définie
-    if (!settings.vocal.voicesByEngine) {
-        settings.vocal.voicesByEngine = {
-            kokoro: ['ff_siwis'],
-            voxtral: ['fr_female', 'fr_male']
-        };
-    }
-
-    const voices = settings.vocal.voicesByEngine[engine] || [];
     const select = document.getElementById('tts-voice-select');
     if (!select) return;
-
-    // Auto-reset si la voix actuelle n'appartient pas à ce moteur
+    const engine = settings.vocal.ttsEngine || 'kokoro';
+    const voices = VOICES_BY_ENGINE[engine] || [];
     if (voices.length > 0 && !voices.includes(settings.vocal.ttsVoice)) {
         updateSetting('vocal.ttsVoice', voices[0]);
     }
-
-    const VOICE_LABELS = {
-        'fr_female': '👩 Femme française (Voxtral)',
-        'fr_male':   '👨 Homme français (Voxtral)',
-        'ff_siwis':  '👩 Siwis — FR féminine (Kokoro)',
-        'af_heart':  '💙 Heart — EN féminine (Kokoro)',
-        'af_bella':  '🌸 Bella — EN féminine (Kokoro)',
-        'am_michael':'🎙 Michael — EN masculin (Kokoro)',
-        'am_adam':   '🔵 Adam — EN masculin (Kokoro)',
-    };
-    select.innerHTML = '';
-    voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.value = voice;
-        option.textContent = VOICE_LABELS[voice] || voice;
-        if (voice === settings.vocal.ttsVoice) option.selected = true;
-        select.appendChild(option);
-    });
+    select.innerHTML = renderVoiceOptions();
 }
 window.updateTTSVoiceSelector = updateTTSVoiceSelector;
 
@@ -4170,6 +4142,33 @@ function switchSettingsTab(tabId) {
 }
 window.switchSettingsTab = switchSettingsTab;
 
+const VOICE_LABELS = {
+    'fr_female':  '👩 Femme française (Voxtral)',
+    'fr_male':    '👨 Homme français (Voxtral)',
+    'ff_siwis':   '👩 Siwis — FR féminine (Kokoro)',
+    'af_heart':   '💙 Heart — EN féminine (Kokoro)',
+    'af_bella':   '🌸 Bella — EN féminine (Kokoro)',
+    'am_michael': '🎙 Michael — EN masculin (Kokoro)',
+    'am_adam':    '🔵 Adam — EN masculin (Kokoro)',
+};
+const VOICES_BY_ENGINE = {
+    kokoro:  ['ff_siwis','af_heart','af_bella','am_michael','am_adam'],
+    voxtral: ['fr_female','fr_male'],
+};
+function renderVoiceOptions() {
+    const eng = (settings.vocal && settings.vocal.ttsEngine) || 'kokoro';
+    const cur = (settings.vocal && settings.vocal.ttsVoice) || '';
+    const list = VOICES_BY_ENGINE[eng] || [];
+    let html = '';
+    for (let i = 0; i < list.length; i++) {
+        const v = list[i];
+        const sel = v === cur ? ' selected' : '';
+        html += '<option value="' + v + '"' + sel + '>' + (VOICE_LABELS[v] || v) + '</option>';
+    }
+    return html;
+}
+window.renderVoiceOptions = renderVoiceOptions;
+
 function renderSettingsPane(tab) {
     if (tab === 'chat') return `
         <h3>PARAMÈTRES CHAT</h3>
@@ -4257,12 +4256,7 @@ function renderSettingsPane(tab) {
         <div class="setting-card">
             <label class="s-label">VOIX</label>
             <select class="cyber-select" id="tts-voice-select" onchange="updateSetting('vocal.ttsVoice', this.value)">
-                ${(()=>{
-                    const _vmap={'fr_female':'👩 Femme française (Voxtral)','fr_male':'👨 Homme français (Voxtral)','ff_siwis':'👩 Siwis — FR féminine (Kokoro)','af_heart':'💙 Heart — EN féminine (Kokoro)','af_bella':'🌸 Bella — EN féminine (Kokoro)','am_michael':'🎙 Michael — EN masculin (Kokoro)','am_adam':'🔵 Adam — EN masculin (Kokoro)'};
-                    const _vbe={kokoro:['ff_siwis','af_heart','af_bella','am_michael','am_adam'],voxtral:['fr_female','fr_male']};
-                    const _eng=settings.vocal.ttsEngine||'kokoro';
-                    return (_vbe[_eng]||[]).map(v=>`<option value="${v}"${v===settings.vocal.ttsVoice?' selected':''}>${_vmap[v]||v}</option>`).join('');
-                })()}
+                ${renderVoiceOptions()}
             </select>
         </div>
         <div class="setting-card">
