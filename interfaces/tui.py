@@ -6,10 +6,12 @@ from textual.widgets import (
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.binding import Binding
+from textual.command import Provider, Hit, Hits
 from textual import events
 from core.orchestrator import Orchestrator
 import asyncio
 import os
+from typing import AsyncGenerator
 
 
 # ─────────────────────────── Modals ────────────────────────────
@@ -150,6 +152,36 @@ class HelpScreen(ModalScreen):
             self.dismiss(None)
 
 
+# ──────────────────────── Command palette provider ──────────────────────
+
+class JARVISCommands(Provider):
+    """Commandes JARVIS dans la palette (Ctrl+P / rond en haut à gauche)."""
+
+    COMMANDS_LIST = [
+        ("⚙️  Paramètres — Clés API", "open_settings"),
+        ("🗑️  Effacer la conversation", "clear_chat"),
+        ("❓ Aide — Liste des commandes", "open_help"),
+        ("🤖 Agents disponibles (/agents)", "cmd_agents"),
+        ("📊 Statut du système (/status)", "cmd_status"),
+        ("⚙️  Configuration (/config)", "cmd_config"),
+    ]
+
+    async def search(self, query: str) -> Hits:
+        app = self.app
+        for label, action in self.COMMANDS_LIST:
+            if not query or query.lower() in label.lower():
+                yield Hit(
+                    score=1.0,
+                    match_display=label,
+                    command=getattr(app, f"action_{action}", None) or (lambda a=action: app._palette_action(a)),
+                    help=label,
+                )
+
+    async def discover(self) -> Hits:
+        async for hit in self.search(""):
+            yield hit
+
+
 # ──────────────────────── Application principale ────────────────────────
 
 SLASH_COMMANDS = {
@@ -177,6 +209,8 @@ AVAILABLE_MODELS = [
 class JARVISApp(App):
     TITLE = "JARVIS"
     SUB_TITLE = "v1.0"
+
+    COMMANDS = App.COMMANDS | {JARVISCommands}
 
     BINDINGS = [
         Binding("ctrl+l", "clear_chat", show=False),
@@ -466,6 +500,14 @@ class JARVISApp(App):
             show(f"❓ Commande inconnue: [red]{cmd}[/red]\nTapez [bold]/help[/bold] pour la liste des commandes.", "error-msg")
 
     # ── Actions ─────────────────────────────────────────────────
+
+    def _palette_action(self, action: str) -> None:
+        if action == "cmd_agents":
+            asyncio.create_task(self._handle_slash_command("/agents"))
+        elif action == "cmd_status":
+            asyncio.create_task(self._handle_slash_command("/status"))
+        elif action == "cmd_config":
+            asyncio.create_task(self._handle_slash_command("/config"))
 
     def action_clear_chat(self) -> None:
         messages = self.query_one("#messages", ScrollableContainer)
