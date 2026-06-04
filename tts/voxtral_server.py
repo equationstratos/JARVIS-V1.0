@@ -77,9 +77,13 @@ async def health():
 @app.post("/v1/audio/speech")
 async def speech(req: SpeechRequest):
     """Synthétise du texte en audio WAV via l'API Mistral Voxtral."""
-    if not MISTRAL_API_KEY:
+    # Relire la clé depuis .env à chaque requête pour prendre en compte
+    # les mises à jour faites via l'interface sans redémarrer le serveur
+    load_dotenv(os.path.join(_ROOT, ".env"), override=True)
+    api_key = os.getenv("MISTRAL_API_KEY", "")
+    if not api_key:
         return JSONResponse(
-            {"error": "MISTRAL_API_KEY non configurée. Ajoutez-la dans .env"},
+            {"error": "MISTRAL_API_KEY non configurée. Ajoutez-la dans Paramètres → API"},
             status_code=503,
         )
 
@@ -93,7 +97,7 @@ async def speech(req: SpeechRequest):
     try:
         from mistralai import Mistral
 
-        client = Mistral(api_key=MISTRAL_API_KEY)
+        client = Mistral(api_key=api_key)
 
         # Appel API Mistral TTS (Voxtral)
         response = client.audio.speech(
