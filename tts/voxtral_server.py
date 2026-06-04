@@ -109,8 +109,18 @@ async def speech(req: SpeechRequest):
             return JSONResponse({"error": "Clé API Mistral invalide"}, status_code=401)
         if resp.status_code != 200:
             return JSONResponse({"error": f"Mistral API {resp.status_code}: {resp.text}"}, status_code=502)
-        content_type = resp.headers.get("content-type", "audio/mpeg")
-        return Response(content=resp.content, media_type=content_type,
+
+        # L'API Mistral retourne {"audio_data": "<base64>"} au lieu de bytes directs
+        import base64, json as _json
+        content_type = resp.headers.get("content-type", "")
+        if "application/json" in content_type:
+            data = resp.json()
+            audio_b64 = data.get("audio_data") or data.get("audio") or data.get("data", "")
+            audio_bytes = base64.b64decode(audio_b64)
+        else:
+            audio_bytes = resp.content
+
+        return Response(content=audio_bytes, media_type="audio/mpeg",
                         headers={"X-TTS-Engine": "voxtral", "X-Voice": req.voice})
     except httpx.TimeoutException:
         return JSONResponse({"error": "Timeout Mistral API"}, status_code=504)
