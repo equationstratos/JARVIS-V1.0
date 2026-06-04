@@ -1,18 +1,15 @@
 from textual.app import App, ComposeResult
 from textual.widgets import (
     Header, Footer, Input, Static, ListView, ListItem,
-    Label, Select, Button, TextArea, Markdown,
+    Label, Select, Button, Markdown,
 )
-from textual.containers import Container, Horizontal, Vertical, ScrollableContainer, Grid
+from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.screen import ModalScreen
 from textual.binding import Binding
 from textual import events
-from textual.reactive import reactive
 from core.orchestrator import Orchestrator
 import asyncio
 import os
-import re
-import pyperclip
 
 
 # ─────────────────────────── Modals ────────────────────────────
@@ -153,45 +150,6 @@ class HelpScreen(ModalScreen):
             self.dismiss(None)
 
 
-class ContextMenu(Container):
-    """Mini menu contextuel clic-droit."""
-
-    CSS = """
-    ContextMenu {
-        width: 22;
-        height: auto;
-        background: #334155;
-        border: solid #475569;
-        layer: overlay;
-        display: none;
-    }
-    ContextMenu.visible {
-        display: block;
-    }
-    .ctx-item {
-        padding: 0 1;
-        color: #f8fafc;
-        height: 1;
-    }
-    .ctx-item:hover {
-        background: #0ea5e9;
-        color: #ffffff;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        yield Static("📋 Copier", classes="ctx-item", id="ctx-copy")
-        yield Static("🧹 Tout effacer", classes="ctx-item", id="ctx-clear")
-        yield Static("⚙️  Paramètres", classes="ctx-item", id="ctx-settings")
-
-    def show_at(self, x: int, y: int) -> None:
-        self.styles.offset = (x, y)
-        self.add_class("visible")
-
-    def hide(self) -> None:
-        self.remove_class("visible")
-
-
 # ──────────────────────── Application principale ────────────────────────
 
 SLASH_COMMANDS = {
@@ -221,10 +179,10 @@ class JARVISApp(App):
     SUB_TITLE = "v1.0"
 
     BINDINGS = [
-        Binding("ctrl+l", "clear_chat", "Effacer"),
-        Binding("ctrl+s", "open_settings", "Paramètres"),
-        Binding("ctrl+h", "open_help", "Aide"),
-        Binding("ctrl+q", "quit", "Quitter"),
+        Binding("ctrl+l", "clear_chat", show=False),
+        Binding("ctrl+s", "open_settings", "⚙️ Paramètres"),
+        Binding("ctrl+h", "open_help", show=False),
+        Binding("ctrl+q", "quit", show=False),
     ]
 
     CSS = """
@@ -343,7 +301,6 @@ class JARVISApp(App):
         self.orchestrator = orchestrator
         self.history = []
         self._last_message_text = ""
-        self._context_menu_visible = False
 
     def compose(self) -> ComposeResult:
         # Barre de menu en haut
@@ -380,7 +337,6 @@ class JARVISApp(App):
                 yield Input(placeholder="Parlez à JARVIS... (/ pour les commandes)", id="user-input")
                 yield Button("▶ Envoyer", id="send-btn")
 
-        yield ContextMenu(id="context-menu")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -395,7 +351,7 @@ class JARVISApp(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         btn_id = event.button.id
-        if btn_id == "menu-settings" or btn_id == "ctx-settings":
+        if btn_id == "menu-settings":
             self.action_open_settings()
         elif btn_id == "menu-help":
             self.action_open_help()
@@ -410,12 +366,6 @@ class JARVISApp(App):
             self._process_input(inp.value)
             inp.value = ""
             inp.focus()
-        elif btn_id == "ctx-copy":
-            self._copy_last_message()
-            self._hide_context_menu()
-        elif btn_id == "ctx-clear":
-            self.action_clear_chat()
-            self._hide_context_menu()
 
     # ── Input soumis ────────────────────────────────────────────
 
@@ -430,7 +380,6 @@ class JARVISApp(App):
     async def _process_input(self, text: str) -> None:
         if not text:
             return
-        self._hide_context_menu()
 
         # Commandes slash
         if text.startswith("/"):
@@ -515,29 +464,6 @@ class JARVISApp(App):
 
         else:
             show(f"❓ Commande inconnue: [red]{cmd}[/red]\nTapez [bold]/help[/bold] pour la liste des commandes.", "error-msg")
-
-    # ── Clic droit / menu contextuel ────────────────────────────
-
-    def on_click(self, event: events.Click) -> None:
-        if event.button == 3:  # clic droit
-            ctx = self.query_one("#context-menu", ContextMenu)
-            ctx.show_at(event.screen_x, event.screen_y)
-            self._context_menu_visible = True
-            event.stop()
-        else:
-            if self._context_menu_visible:
-                self._hide_context_menu()
-
-    def _hide_context_menu(self) -> None:
-        self.query_one("#context-menu", ContextMenu).hide()
-        self._context_menu_visible = False
-
-    def _copy_last_message(self) -> None:
-        try:
-            pyperclip.copy(self._last_message_text)
-            self.notify("Copié dans le presse-papiers !", severity="information")
-        except Exception:
-            self.notify("Impossible de copier (pyperclip)", severity="warning")
 
     # ── Actions ─────────────────────────────────────────────────
 
