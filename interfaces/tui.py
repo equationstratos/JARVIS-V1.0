@@ -214,7 +214,7 @@ class JARVISApp(App):
 
     BINDINGS = [
         Binding("ctrl+l", "clear_chat", show=False),
-        Binding("ctrl+s", "open_settings", "⚙️ Paramètres"),
+        Binding("ctrl+s", "open_settings", show=False),
         Binding("ctrl+h", "open_help", show=False),
         Binding("ctrl+q", "quit", show=False),
     ]
