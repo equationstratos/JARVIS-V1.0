@@ -1103,7 +1103,7 @@ async def tts_status(request: Request):
 
     kokoro_ok, voxtral_ok = await asyncio.gather(
         _check(f"{tts_base}/voices"),
-        _check(f"{voxtral_base}/voices"),
+        _check(f"{voxtral_base}/health"),
     )
     return JSONResponse({
         "kokoro": {"available": kokoro_ok, "url": tts_base},
