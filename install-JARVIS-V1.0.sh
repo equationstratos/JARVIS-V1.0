@@ -206,6 +206,15 @@ install_system_deps() {
         fi
     fi
 
+    # mpg123 — lecture audio MP3 pour le TTS Voxtral/Kokoro
+    if [[ "$OS" == "Linux" || "$OS" == "WSL" ]]; then
+        if ! has_cmd mpg123; then
+            sudo apt-get install -y -qq mpg123 2>/dev/null || warn "mpg123 non installé (lecture audio TTS dégradée)"
+        fi
+    elif [[ "$OS" == "macOS" ]]; then
+        has_cmd mpg123 || brew install mpg123 2>/dev/null || warn "mpg123 non installé"
+    fi
+
     # Toujours s'assurer que python3-venv est installé (Ubuntu peut avoir python3 sans venv)
     if [[ "$OS" == "Linux" || "$OS" == "WSL" ]]; then
         PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
@@ -341,15 +350,7 @@ install_python_deps() {
         warn "chromadb non installé (mémoire vectorielle désactivée)"
     fi
 
-    # ── mistralai (TTS Voxtral) ────────────────────────────────
-    spinner_start "mistralai  [TTS Voxtral] ..."
-    if pip install mistralai --no-cache-dir --quiet 2>/dev/null; then
-        spinner_stop
-        success "mistralai OK"
-    else
-        spinner_stop
-        warn "mistralai non installé (TTS Voxtral désactivé)"
-    fi
+    # ── Note: mistralai SDK non requis (httpx utilisé directement) ────
 
     # Nettoyer le dossier tmp pip et restaurer TMPDIR par défaut
     rm -rf "${REPO_DIR}/.pip-tmp"
