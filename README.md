@@ -300,6 +300,23 @@ python main.py --tui
 
 Navigation clavier, sélection d'agent, chat en mode texte.
 
+**Commandes slash disponibles :**
+
+| Commande | Action |
+|----------|--------|
+| `/help` | Aide et liste des commandes |
+| `/clear` | Effacer l'historique du chat |
+| `/agents` | Lister les agents disponibles |
+| `/model` | Afficher le modèle actif |
+| `/api` | Statut des clés API configurées |
+| `/status` | État de tous les services |
+| `/config` | Afficher la configuration |
+
+**Raccourcis :**
+- `Ctrl+P` ou clic sur le rond en haut à gauche → palette de commandes (Settings, Clear, Help...)
+- `Ctrl+Q` → quitter
+- `Shift+clic droit` → menu contextuel natif du terminal (copier/coller)
+
 ---
 
 ## TTS — Synthèse vocale (optionnel)
@@ -322,21 +339,28 @@ pip install -r requirements.txt
 `launch-JARVIS.sh` détecte automatiquement `../jarvis-voice/tts_server4.py` et le démarre.  
 Voix disponible : `ff_siwis` (française féminine).
 
-### Voxtral (port 8001) — IA Mistral, qualité supérieure
+### Voxtral (port 8001) — IA Mistral, qualité supérieure (défaut)
 
 Voxtral est le moteur TTS de Mistral AI. Il nécessite une clé API Mistral.
 
 **Configuration :**
-```bash
+```env
 # Dans .env
 MISTRAL_API_KEY=votre-cle-mistral
+VOXTRAL_MODEL=voxtral-mini-tts-latest
 ```
 
 `launch-JARVIS.sh` démarre automatiquement `tts/voxtral_server.py` si `MISTRAL_API_KEY` est configurée.
 
-Voix disponibles : `fr_female`, `fr_male`
+Voix par défaut : `fr_marie_curious` (française, curiose). Les voix disponibles sont listées dynamiquement depuis l'API Mistral — toutes visibles dans Settings → Voix (🇫🇷 en premier).
 
 **Obtenir une clé Mistral :** https://console.mistral.ai/
+
+**Lecture audio :** nécessite `mpg123` (installé automatiquement par `install-JARVIS-V1.0.sh`) :
+```bash
+sudo apt install mpg123   # Debian/Ubuntu
+brew install mpg123       # macOS
+```
 
 ### Changer de moteur TTS
 
@@ -377,8 +401,12 @@ python TESTS/test_stream.py
 | Port 8501 déjà utilisé            | `kill $(lsof -ti:8501)` puis relancer                     |
 | Port 3001 déjà utilisé            | `kill $(lsof -ti:3001)` puis relancer                     |
 | `ModuleNotFoundError: chromadb`   | `pip install chromadb`                                    |
+| `ModuleNotFoundError: textual`    | `pip install textual`                                     |
 | `No API key` error                | Vérifiez que `JARVIS_DEFAULT_MODEL` commence par `ollama/` |
 | Tests d'import échouent           | `source venv/bin/activate` avant de lancer les tests      |
+| TTS sans son (mpg123 manquant)    | `sudo apt install mpg123` (ou `brew install mpg123`)      |
+| TTS Voxtral : erreur 503          | Vérifiez `MISTRAL_API_KEY` dans `.env`, relancez le serveur |
+| TTS Voxtral : liste voix vide     | Serveur Voxtral pas démarré — `python tts/voxtral_server.py` |
 | App mobile ne se connecte pas     | Vérifiez l'URL du serveur dans Settings (IP de la machine, pas localhost) |
 | `pm2: command not found`          | `npm install -g pm2`                                      |
 | Service PM2 ne redémarre pas      | `pm2 logs <nom>` pour voir l'erreur, puis `pm2 restart <nom>` |
