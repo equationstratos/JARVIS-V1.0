@@ -3378,8 +3378,9 @@ async function updateTTSVoiceSelector() {
                 updateSetting('vocal.ttsVoice', first);
             }
         } catch(e) {
-            select.innerHTML = '<option value="en_paul_neutral">Paul - Neutral (défaut)</option>';
-            updateSetting('vocal.ttsVoice', 'en_paul_neutral');
+            select.innerHTML = '<option value="fr_marie_curious">🇫🇷 Marie - Curious (défaut)</option>';
+            select.value = 'fr_marie_curious';
+            updateSetting('vocal.ttsVoice', 'fr_marie_curious');
         }
         return;
     }
