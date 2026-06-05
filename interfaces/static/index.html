@@ -3346,42 +3346,35 @@ async function updateTTSVoiceSelector() {
     const engine = settings.vocal.ttsEngine || 'kokoro';
 
     if (engine === 'voxtral') {
-        select.innerHTML = '<option disabled>⏳ Chargement voix Mistral...</option>';
+        // Toujours commencer avec Marie comme option fixe
+        select.innerHTML = '<option value="fr_marie_curious">🇫🇷 Marie - Curious (défaut)</option>';
+        const saved = settings.vocal.ttsVoice || 'fr_marie_curious';
         try {
             const resp = await fetch('http://localhost:8001/voices');
             const data = await resp.json();
-            const voices = data.voices || [];
-            // fr_marie_curious en premier, puis autres voix françaises, puis reste
+            let voices = data.voices || [];
+            // Supprimer Marie de la liste API pour éviter doublon, puis la remettre en premier
+            voices = voices.filter(v => v.slug !== 'fr_marie_curious');
             voices.sort((a, b) => {
-                if (a.slug === 'fr_marie_curious') return -1;
-                if (b.slug === 'fr_marie_curious') return 1;
                 const aFr = a.languages && a.languages.some(l => l.startsWith('fr'));
                 const bFr = b.languages && b.languages.some(l => l.startsWith('fr'));
                 return (bFr ? 1 : 0) - (aFr ? 1 : 0);
             });
-            const saved = settings.vocal.ttsVoice;
-            select.innerHTML = '';
+            // Ajouter les autres voix après Marie
             voices.forEach(function(v) {
                 const opt = document.createElement('option');
                 opt.value = v.slug;
                 const isFr = v.languages && v.languages.some(l => l.startsWith('fr'));
-                const flag = isFr ? '🇫🇷 ' : '🇬🇧 ';
-                opt.textContent = flag + v.name;
-                if (v.slug === saved) opt.selected = true;
+                opt.textContent = (isFr ? '🇫🇷 ' : '🇬🇧 ') + v.name;
                 select.appendChild(opt);
             });
-            if (voices.length > 0 && !voices.find(v => v.slug === saved)) {
-                // Préférer une voix française
-                const fr = voices.find(v => v.languages && v.languages.some(l => l.startsWith('fr')));
-                const first = (fr || voices[0]).slug;
-                select.value = first;
-                updateSetting('vocal.ttsVoice', first);
-            }
         } catch(e) {
-            select.innerHTML = '<option value="fr_marie_curious">🇫🇷 Marie - Curious (défaut)</option>';
-            select.value = 'fr_marie_curious';
-            updateSetting('vocal.ttsVoice', 'fr_marie_curious');
+            // Serveur offline : Marie seule dans la liste, c'est OK
         }
+        // Sélectionner la voix sauvegardée, ou Marie par défaut
+        select.value = saved;
+        if (!select.value) { select.value = 'fr_marie_curious'; }
+        if (select.value !== saved) updateSetting('vocal.ttsVoice', 'fr_marie_curious');
         return;
     }
 
